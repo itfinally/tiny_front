@@ -120,8 +120,7 @@ export class Collection extends Iterable {
         let all = true;
 
         for ( let elem of collection ) {
-            if ( !this.contains( elem ) ) {
-                all = false;
+            if ( !(all &= this.contains( elem )) ) {
                 break;
             }
         }
@@ -210,11 +209,16 @@ export class Collection extends Iterable {
             throw new TypeError( `Expect function but got ${callbackFn}` );
         }
 
+        let index = 0;
         for ( let elem of this ) {
-            if ( callbackFn( elem ) ) {
+            if ( callbackFn( elem, index++ ) ) {
                 break;
             }
         }
+    }
+
+    toString() {
+        return JSON.stringify( this.toArray() );
     }
 }
 
@@ -654,10 +658,6 @@ export class ArrayList extends List {
             }
         };
     }
-
-    toString() {
-        return JSON.stringify( this._elements );
-    }
 }
 
 /**
@@ -909,10 +909,6 @@ export class LinkedList extends List {
                 that._size -= 1;
             }
         }
-    }
-
-    toString() {
-        return JSON.stringify( this.toArray() );
     }
 }
 
@@ -1216,10 +1212,6 @@ export class ArrayDeque extends Deque {
                 elements.splice( head, 1 );
             }
         };
-    }
-
-    toString() {
-        return JSON.stringify( this.toArray() );
     }
 }
 

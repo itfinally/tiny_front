@@ -2,49 +2,6 @@ import { IllegalStateException, UnsupportedOperationException } from "../excepti
 import { Collection, Iterator } from "./collection";
 import { CoreUtils } from "../core_utils";
 
-// class HashUtils {
-//     static dekHash( target ) {
-//         let hashCode = 0;
-//
-//         for ( let i = 0; i < target.length; i += 1 ) {
-//             hashCode = ( ( hashCode << 5 ) ^ ( hashCode >> 27 ) ) ^ target.charCodeAt( i );
-//         }
-//
-//         return hashCode;
-//     }
-//
-//     static fnvHash( target ) {
-//         let fnvPrime = 0x811C9DC5,
-//             hashCode = 0;
-//
-//         for ( let i = 0; i < target.length; i += 1 ) {
-//             hashCode *= fnvPrime;
-//             hashCode ^= target.charCodeAt( i );
-//         }
-//
-//         return hashCode;
-//     }
-//
-//     static pjwHash( target ) {
-//         let bitsInUnsignedInt = 4 * 8,
-//             threeQuarters = ( bitsInUnsignedInt * 3 ) / 4,
-//             oneEighth = bitsInUnsignedInt / 8,
-//             highBits = 0xffffffff << ( bitsInUnsignedInt - oneEighth ),
-//             hashCode = 0,
-//             tmp = 0;
-//
-//         for ( let i = 0; i < target.length; i += 1 ) {
-//             hashCode = ( hashCode << oneEighth ) + target.charCodeAt( i );
-//
-//             if ( ( tmp = hashCode & highBits ) !== 0 ) {
-//                 hashCode = ( ( hashCode ^ ( tmp >> threeQuarters ) ) & ( ~highBits ) );
-//             }
-//         }
-//
-//         return hashCode;
-//     }
-// }
-
 /**
  * Cannot use number or boolean as key!!!
  *
@@ -243,15 +200,6 @@ class Set extends Collection {
 
     /**
      * @abstract
-     * @param collection
-     * @throws {UnsupportedOperationException}
-     */
-    addAll( collection ) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * @abstract
      * @param target
      * @throws {UnsupportedOperationException}
      */
@@ -261,36 +209,10 @@ class Set extends Collection {
 
     /**
      * @abstract
-     * @param collection
-     * @throws {UnsupportedOperationException}
-     */
-    containsAll( collection ) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * @abstract
-     * @throws {UnsupportedOperationException}
-     */
-    isEmpty() {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * @abstract
      * @param target
      * @throws {UnsupportedOperationException}
      */
     remove( target ) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * @abstract
-     * @param collection
-     * @throws {UnsupportedOperationException}
-     */
-    removeAll( collection ) {
         throw new UnsupportedOperationException();
     }
 
@@ -306,7 +228,7 @@ class Set extends Collection {
      * @abstract
      * @throws {UnsupportedOperationException}
      */
-    toArray() {
+    iterator() {
         throw new UnsupportedOperationException();
     }
 }
@@ -482,7 +404,7 @@ export class HashMap extends Map {
                 let head,
                     lastIndex = index - 1;
 
-                while( (head = elements[ lastIndex ]) === null ) {
+                while ( (head = elements[ lastIndex ]) === null ) {
                     lastIndex -= 1;
                 }
 
@@ -820,5 +742,65 @@ export class HashMap extends Map {
         }
 
         return JSON.stringify( entries );
+    }
+}
+
+/**
+ * @class HashSet
+ * @extends Set
+ */
+export class HashSet extends Set {
+    constructor( initCapacity = 16, loadFactor = .75 ) {
+        super();
+
+        /**
+         * @type {HashMap}
+         * @private
+         */
+        this._map = new HashMap( initCapacity, loadFactor );
+    }
+
+    /**
+     * @param target
+     * @return {boolean}
+     */
+    contains( target ) {
+        return this._map.containsKey( target );
+    }
+
+    /**
+     * @param target
+     * @return {*}
+     */
+    remove( target ) {
+        return this._map.remove( target );
+    }
+
+    /**
+     * @return {Iterator<T>}
+     */
+    iterator() {
+        return this._map.keySet().iterator();
+    }
+
+    /**
+     * @param target
+     */
+    add( target ) {
+        this._map.put( target, null );
+        return true;
+    }
+
+    /**
+     * @return {number}
+     */
+    size() {
+        return this._map.size();
+    }
+
+    /**
+     */
+    clear() {
+        this._map.clear();
     }
 }
