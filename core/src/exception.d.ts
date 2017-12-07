@@ -21,3 +21,7 @@ export class UnsupportedOperationException extends Exception {
 export class IndexOutOfBoundException extends Exception {
     constructor( message?: string );
 }
+
+export class NoSuchElementException extends Exception {
+    constructor( message?: string );
+}

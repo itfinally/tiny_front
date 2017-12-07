@@ -26,6 +26,8 @@ export class CoreUtils {
     public static deepCopy( to: any, from: any, ignoreFunction: boolean ): void;
 
     public static each( collection: Array<any> | object, callbackFn: Function, thisArg: object ): void;
+
+    public static eq( target: any, src: any ): boolean;
 }
 
 export class StringUtils {
