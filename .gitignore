@@ -1,4 +1,10 @@
 .git
 .idea
 .DS_store
+npm-debug
 node_modules
+
+src/core/**/*.js
+src/retrofitjs/**/*.js
+*.js.map
+test

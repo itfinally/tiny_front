@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "allowJs": true,
+    "target": "es2016",
+    "module": "commonjs",
+    "removeComments": true,
+    "inlineSourceMap": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "sourceRoot": "./src/core"
+  },
+  "exclude": [
+    "node_modules"
+  ]
+}
