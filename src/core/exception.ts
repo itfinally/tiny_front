@@ -47,3 +47,9 @@ export class NoSuchElementException extends Exception {
         super( "NoSuchElementException", message );
     }
 }
+
+export class AuthenticationException extends Exception {
+    constructor( message: string = "" ) {
+        super( "AuthenticationException", message );
+    }
+}

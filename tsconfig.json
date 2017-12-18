@@ -4,11 +4,26 @@
     "allowJs": true,
     "target": "es2016",
     "module": "commonjs",
+    "sourceRoot": "./src",
     "removeComments": true,
     "inlineSourceMap": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "sourceRoot": "./src/core"
+    "baseUrl": "./",
+    "paths": {
+      "@/*": [
+        "src/*"
+      ],
+      "@core/*": [
+        "src/core/*"
+      ],
+      "@admin/*": [
+        "src/admin/*"
+      ],
+      "@retrofitjs/*": [
+        "src/retrofitjs/*"
+      ]
+    }
   },
   "exclude": [
     "node_modules"

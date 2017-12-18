@@ -502,3 +502,13 @@ export class EventEmitter {
         return this;
     }
 }
+
+export class Dates {
+    private constructor() {
+    }
+
+    static toLocalDateTimeString( millis:number ): string {
+        let date = new Date( millis );
+        return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+    }
+}

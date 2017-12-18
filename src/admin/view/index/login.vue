@@ -64,6 +64,7 @@
 
     import { CoreUtils, StringUtils } from "@core/index";
     import { authentication } from "@admin/rest/client";
+    import { REQUEST_ADDRESS } from "@admin/tools/constant";
 
     export default {
         data() {
@@ -86,23 +87,20 @@
         },
         methods: {
             login() {
-                let user = this.loginForm,
-                    failFunc = () => {
-                        user.tryTime += 1;
+                let user = this.loginForm;
 
-                        if ( user.tryTime >= 3 && !user.requireValid ) {
-                            this.getImage();
-                            user.requireValid = true;
-                        }
-                    };
+                authentication( user.account, user.password, user.validCode, () => {
+                    user.tryTime = 0;
+                    user.requireValid = false;
 
-                // keep same tryTime with itfinally_project KaptchaService.requireValid
-                if ( user.tryTime >= 3 ) {
-                    authentication( user.account, user.password, user.validCode, failFunc );
+                }, () => {
+                    user.tryTime += 1;
 
-                } else {
-                    authentication( user.account, user.password, null, failFunc );
-                }
+                    if ( user.tryTime >= 3 && !user.requireValid ) {
+                        this.getImage();
+                        user.requireValid = true;
+                    }
+                } );
             },
             getImage() {
                 let loginForm = this.loginForm;
@@ -112,10 +110,10 @@
                     return;
                 }
 
-                loginForm.validImage = StringUtils.format(endpoint.validCode, {
+                loginForm.validImage = StringUtils.format( `${REQUEST_ADDRESS}/get_valid_image/\${account}/\${random}`, {
                     "account": loginForm.account,
-                    "random" : CoreUtils.uuid()
-                });
+                    "random": CoreUtils.uuid()
+                } );
             },
             forget() {
 

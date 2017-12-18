@@ -58,6 +58,10 @@ export class LoggerInterceptor extends Interceptor {
     }
 
     public failedHandle( id: string, raise: Error ): Error {
+        if ( !this.debug ) {
+            return raise;
+        }
+
         let curRequest = this.requestMap.get( id ),
             request: RetrofitRequest = curRequest[ "request" ];
 
@@ -131,7 +135,6 @@ export class DeserializerInterceptor extends Interceptor {
 
     public preHandle( id: string, request: RetrofitRequest ): boolean {
         this.requestMap.put( id, request.dataType );
-
         return true;
     }
 

@@ -5,7 +5,7 @@
  *
  * ##################################################
  */
-import { HashMap, HashSet, Map, Set } from "../core/index";
+import { HashMap, HashSet, Map, Set } from "@/core";
 
 export enum DataType {
     XML = "xml",
@@ -49,21 +49,21 @@ export class RequestDetails {
 }
 
 export class RetrofitRequest implements RequestInit {
-    body: any;
-    cache: RequestCache;
-    credentials: RequestCredentials;
-    headers: any;
-    integrity: string;
-    keepalive: boolean;
-    method: string;
-    mode: RequestMode;
-    redirect: RequestRedirect;
-    referrer: string;
-    referrerPolicy: ReferrerPolicy;
-    window: any;
+    body?: any;
+    cache?: RequestCache;
+    credentials?: RequestCredentials;
+    headers?: any;
+    integrity?: string;
+    keepalive?: boolean;
+    method?: string;
+    mode?: RequestMode;
+    redirect?: RequestRedirect;
+    referrer?: string;
+    referrerPolicy?: ReferrerPolicy;
+    window?: any;
 
     // extend field
-    url: string;
+    url?: string;
     retry?: number;
     timeout?: number;
     dataType?: DataType;

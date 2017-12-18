@@ -13,7 +13,7 @@ module.exports = {
         filename: "[name].js"
     },
     devServer: {
-        public: "192.168.1.106",
+        public: "127.0.0.1",
         disableHostCheck: true,
         host: "0.0.0.0",
         compress: true,
@@ -30,6 +30,7 @@ module.exports = {
             test: /\.js$/,
             loader: "babel-loader",
             exclude: /node_modules/
+
         }, {
             test: /\.vue$/, loader: "vue-loader",
             exclude: /node_modules/,

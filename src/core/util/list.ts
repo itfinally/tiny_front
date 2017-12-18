@@ -233,8 +233,8 @@ export class ArrayDeque<T> extends AbstractCollection<T> implements Deque<T> {
             halfPart = length - head,
             newCapacity = [];
 
-        newCapacity.push( ...(elements.slice( halfPart )) );
-        newCapacity.push( ...(elements.slice( 0, halfPart )) );
+        newCapacity.push( ...elements.slice( halfPart ) );
+        newCapacity.push( ...elements.slice( 0, halfPart ) );
 
         this.capacity = capacity > MAX_INTEGER ? MAX_INTEGER : capacity * 2;
         this.elements = newCapacity;

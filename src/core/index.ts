@@ -31,6 +31,7 @@ export {
 
 export {
 
+    Dates,
     Assert,
     CoreUtils,
     StringUtils,
@@ -46,7 +47,9 @@ export {
     IllegalStateException,
     NoSuchElementException,
     IllegalArgumentException,
+    AuthenticationException,
     IndexOutOfBoundsException,
     UnsupportedOperationException,
+
 
 } from "./exception"

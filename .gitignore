@@ -4,7 +4,7 @@
 npm-debug
 node_modules
 
-src/core/**/*.js
-src/retrofitjs/**/*.js
-*.js.map
 test
+*.js.map
+src/**/*.js
+!src/admin/config/view_router.js

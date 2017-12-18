@@ -7,7 +7,7 @@ import { ContentTypeInterceptor, DeserializerInterceptor, LoggerInterceptor } fr
 
 import {
     ApplicationInterceptorChain, DataType, Interceptor,
-    RequestDetails, RequestHeader, RequestMethod, RetrofitRequest
+    RequestDetails, RequestHeader, RequestMethod, RetrofitRequest, RetrofitResponse
 } from "./support";
 
 import { IllegalArgumentException, IllegalStateException, NullPointException } from "../core/exception";
@@ -207,7 +207,11 @@ export namespace decorators {
 
                 if ( !once.contains( alias ) && parameter ) {
                     once.add( alias );
-                    Collector.getDetails( uuid ).requestBody = parameter;
+
+                    let details = Collector.getDetails( uuid );
+
+                    details.requestBody = parameter;
+                    details.headers.put( "Content-Type", "application/json" );
                 }
 
                 return descriptor;
@@ -413,18 +417,18 @@ namespace HttpRequest {
         }
 
         public static urlBuilder( url: string, args: any, parameter: Array<any> ): string {
-            return getRestfulExpression().test( url ) ?
-                Builder.buildRestfulUrl( url, args, parameter ) : Builder.buildSimpleUrl( url, args, parameter );
+            return getRestfulExpression().test( url )
+                ? Builder.buildRestfulUrl( url, args, parameter )
+                : Builder.buildSimpleUrl( url, args, parameter );
         }
 
         public static headerBuilder( headers: Map<string, string> ): object {
             let _header: any = {};
 
             for ( let entry of headers.entrySet() ) {
-                _header[entry.key] = entry.value;
+                _header[ entry.key ] = entry.value;
             }
 
-            // headers.keys().forEach( name => _header[ name ] = headers.get( name ) );
             return _header;
         }
 
@@ -582,9 +586,9 @@ export namespace FetchRetrofit {
                 return Promise.reject( chain.reverseForError( requestId, new AbortException( `Request ${request.url} has been aborted.` ) ) );
             }
 
-            return retrofitFetchClient( request.url, request ).then(
-                response => chain.reverseForResponse( requestId, response ),
-                raise => (<any>chain.reverseForError( requestId, raise ))
+            return retrofitFetchClient( <string>request.url, request ).then(
+                ( response: RetrofitResponse ) => chain.reverseForResponse( requestId, response ),
+                ( raise: Error ) => <any>chain.reverseForError( requestId, raise )
             );
         }
 

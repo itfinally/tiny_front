@@ -4,8 +4,8 @@ import VueRouter from "vue-router";
 import "iview/dist/styles/iview.css";
 
 import routes from "./src/admin/config/view_router";
-import { GLOBAL_CACHE } from "./src/admin/contants";
-import { ROUTER_KEY, VUE_KEY } from "./src/admin/config/cache_key";
+import { GLOBAL_CACHE } from "./src/admin/tools/constant";
+import { ROUTER_KEY, VUE_KEY } from "@admin/tools/constant";
 
 Vue.use( VueRouter );
 Vue.use( IView );

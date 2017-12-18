@@ -64,11 +64,11 @@ module.exports = {
         new HtmlWebpackPlugin( {
             template: path.resolve( __dirname, "./src/admin/index.html" )
         } ),
-        new UglifyJsPlugin({
+        new UglifyJsPlugin( {
             sourceMap: true,
             uglifyOptions: {
                 ecma: 7
             }
-        })
+        } )
     ]
 };

@@ -26,6 +26,8 @@ export interface Map<K, V> {
 
     get( key: any ): V;
 
+    getOrDefault( key: any, defaultVal: V ): V;
+
     isEmpty(): boolean;
 
     keySet(): Set<K>;
@@ -88,6 +90,10 @@ export abstract class AbstractMap<K, V> implements Map<K, V> {
         }
 
         return <any>null;
+    }
+
+    public getOrDefault( key: any, defaultVal: V ): V {
+        return this.containsKey( key ) ? this.get( key ) : defaultVal;
     }
 
     public isEmpty(): boolean {
@@ -491,15 +497,28 @@ export class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
     }
 
     public remove( key: any ): V {
-        let hash = HashMap.hash( key ),
-            node = this.elements[ hash & (this.capacity - 1) ];
+        let elements = this.elements,
+            hash = HashMap.hash( key ),
+            index = hash & (this.capacity - 1),
+
+            node = elements[ index ];
 
         if ( CoreUtils.isNone( node ) ) {
             return <any>null;
         }
 
         if ( node.hash === hash && ( key === node.key || CoreUtils.eq( key, node.key ) ) ) {
-            this.elements[ hash & (this.capacity - 1) ] = <any>null;
+
+            // one node bucket
+            if ( node === elements[ index ] && null === node.next ) {
+                elements[ index ] = <any>null;
+
+            } else {
+                // multi node bucket
+                elements[ index ] = node.next;
+                node.next = <any>null;
+            }
+
             this.length -= 1;
 
             return node.value;
