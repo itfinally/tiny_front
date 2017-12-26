@@ -1,5 +1,3 @@
-import "ts-promise";
-
 import {
     Args,
     GetMapping,
@@ -22,42 +20,45 @@ import {
     REQUEST_ADDRESS
 } from "@admin/tools/constant";
 
-export function authentication( account: string, password: String, validCode?: string,
-                                successFunc = () => null, failFunc = () => null ) {
-    let baseContent = `${account}:${password}`;
+export async function authentication( account: string, password: String, validCode?: string,
+                                      successFunc = () => null, failFunc = () => null ) {
+    let baseContent = `${account}:${password}`,
 
-    fetchClient( `${REQUEST_ADDRESS}/verifies/login`, {
-        "method": "POST",
-        "headers": {
-            "Authorization": `Basic ${CoreUtils.base64Encoder( baseContent )}`
-        },
-        "body": `validCode=${validCode}`
+        response: Response = await fetchClient( `${REQUEST_ADDRESS}/verifies/login`, {
+            "method": "POST",
+            "headers": {
+                "Authorization": `Basic ${CoreUtils.base64Encoder( baseContent )}`
+            },
+            "body": `validCode=${validCode}`
 
-    } ).then( ( response: Response ) => response.ok ? response.json() : Promise.reject( response ) )
-        .then( ( response: any ) => {
-            if ( response.statusCode !== ResponseStatusEnum.SUCCESS.statusCode ) {
-                GLOBAL_CACHE.get( VUE_KEY ).$Message.error( { "content": `登录失败, ${response.message}` } );
-                failFunc();
-                return;
-            }
+        } );
 
-            // save token
-            localStorage.setItem( TOKEN, response.result );
+    let content: any = await response.json();
 
-            // go back if reLogin is true
-            if ( GLOBAL_CACHE.get( IS_RE_LOGIN ) ) {
-                GLOBAL_CACHE.remove( IS_RE_LOGIN );
-                GLOBAL_CACHE.get( ROUTER_KEY ).go( -1 );
-                return;
-            }
-
-            successFunc();
-            GLOBAL_CACHE.get( ROUTER_KEY ).replace( { "path": "/index" } );
-
-        } ).catch( ( response: Response ) => {
+    if ( !response.ok ) {
         GLOBAL_CACHE.get( VUE_KEY ).$Message.error( { "content": "登陆失败, 请查看控制台了解更多信息" } );
-        response.json().then( response => console.log( response ) );
-    } );
+        console.warn( content );
+        return;
+    }
+
+    if ( content.statusCode !== ResponseStatusEnum.SUCCESS.statusCode ) {
+        GLOBAL_CACHE.get( VUE_KEY ).$Message.error( { "content": `登录失败, ${content.message}` } );
+        failFunc();
+        return;
+    }
+
+    // save token
+    localStorage.setItem( TOKEN, content.result );
+
+    // go back if reLogin is true
+    if ( GLOBAL_CACHE.get( IS_RE_LOGIN ) ) {
+        GLOBAL_CACHE.remove( IS_RE_LOGIN );
+        GLOBAL_CACHE.get( ROUTER_KEY ).go( -1 );
+        return;
+    }
+
+    successFunc();
+    GLOBAL_CACHE.get( ROUTER_KEY ).replace( { "path": "/index" } );
 }
 
 
@@ -112,15 +113,49 @@ class MenuClient {
     }
 
     @ResponseBody()
+    @Args( "menuId", "name" )
+    @PostMapping( "/rename" )
+    public rename( menuId: string, name: string ): Promise<any> {
+        return <any>null;
+    }
+
+    @ResponseBody()
     @GetMapping( "/get_menu_tree" )
     public getMenuTree(): Promise<any> {
         return <any>null;
     }
+}
+
+@RequestMapping( "/menu_role" )
+class MenuRoleClient {
 
     @ResponseBody()
     @Args( "menuId" )
     @GetMapping( "/query_menu_item_roles/:menuId" )
     public queryMenuItemRoles( menuId: string ): Promise<any> {
+        return <any>null;
+    }
+
+    @ResponseBody()
+    @Args( "menuId" )
+    @GetMapping( "/query_available_role/:menuId" )
+    public queryAvailableRole( menuId: string ): Promise<any> {
+        return <any>null;
+    }
+
+    @ResponseBody()
+    @RequestBody( "roleIds" )
+    @Args( "menuItemId", "roleIds" )
+    @PostMapping( "/add_role_menu/:menuItemId" )
+    public addRoleMenu( menuItemId: string, roleIds: string[] ): Promise<any> {
+        return <any>null;
+    }
+
+    @ResponseBody()
+    @RequestBody( "roleIds" )
+    @Args( "menuItemId", "roleIds" )
+    @PostMapping( "/remove_role_menu/:menuItemId" )
+    public removeRoleMenu( menuItemId: string, roleIds: string[] ): Promise<any> {
         return <any>null;
     }
 }
@@ -178,6 +213,32 @@ class AuthorizationClient {
     }
 }
 
+@RequestMapping( "/user" )
+class UserDetailClient {
+
+    @ResponseBody()
+    @Args(
+        "createStartTime", "createEndingTime", "updateStartTime", "updateEndingTime",
+        "status", "nickname", "account", "page", "row"
+    )
+    @PostMapping( "/query_by_multi_condition" )
+    public queryByMultiCondition( createStartTime: number, createEndingTime: number,
+                                  updateStartTime: number, updateEndingTime: number,
+                                  status: number, nickname: string, account: string,
+                                  page: number, row: number ): Promise<any> {
+        return <any>null;
+    }
+
+    @ResponseBody()
+    @Args( "id", "status", "name" )
+    @PostMapping( "/update_user_detail" )
+    public updateUserDetail( id: string, status: number, name: string ): Promise<any> {
+        return <any>null;
+    }
+}
+
 export let
     menuClient: MenuClient = retrofit.create( MenuClient ),
+    menuRoleClient: MenuRoleClient = retrofit.create( MenuRoleClient ),
+    userDetailClient: UserDetailClient = retrofit.create( UserDetailClient ),
     authorizationClient: AuthorizationClient = retrofit.create( AuthorizationClient );

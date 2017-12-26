@@ -6,7 +6,8 @@ let login = ( r => require.ensure( [], () => r( require( "@admin/view/index/logi
 
     // authentication
     menuManager = ( r => require.ensure( [], () => r( require( "@admin/view/authentication/menu_manager.vue" ) ), "authentication" ) ),
-    permission = ( r => require.ensure( [], () => r( require( "@admin/view/authentication/permission.vue" ) ), "authentication" ) );
+    permission = ( r => require.ensure( [], () => r( require( "@admin/view/authentication/permission.vue" ) ), "authentication" ) ),
+    user = ( r => require.ensure( [], () => r( require( "@admin/view/authentication/user.vue" ) ), "authentication" ) );
 
 function prefixWith( prefix, routers ) {
     return routers.map( router => {
@@ -29,11 +30,14 @@ export default [ {
     "component": index,
     "children": [
         ...prefixWith( "auth", [ {
-            "path": "permission",
+            "path": "permission/:params?",
             "component": permission
         }, {
             "path": "menu_manager",
             "component": menuManager
+        }, {
+            "path": "user/:params?",
+            "component": user
         } ] )
     ]
 } ];

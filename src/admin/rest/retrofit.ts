@@ -1,4 +1,4 @@
-import { FetchRetrofit, Interceptor } from "@/retrofitjs";
+import { Chain, FetchRetrofit, Interceptor, RetrofitResponse } from "@/retrofitjs";
 import {
     GLOBAL_CACHE,
     REQUEST_ADDRESS,
@@ -7,15 +7,13 @@ import {
     TOKEN,
     IS_RE_LOGIN
 } from "@admin/tools/constant";
-import { RetrofitRequest, RetrofitResponse } from "@retrofitjs/support";
 import { CoreUtils, AuthenticationException } from "@/core";
 
-class AuthenticationInterceptor extends Interceptor {
-    constructor() {
-        super();
-    }
+class AuthenticationInterceptor implements Interceptor {
 
-    public preHandle( id: string, request: RetrofitRequest ): boolean {
+    public async intercept( chain: Chain ): Promise<RetrofitResponse> {
+        let request = chain.request();
+
         if ( CoreUtils.isNone( request.headers ) ) {
             request.headers = [];
         }
@@ -28,16 +26,14 @@ class AuthenticationInterceptor extends Interceptor {
                 router.push( { path: "/login" } );
             }
 
-            return false;
+            return Promise.reject( new AuthenticationException() );
         }
 
         // added token to header
         request.headers[ "Authorization" ] = `Bearer ${localStorage.getItem( TOKEN )}`;
 
-        return true;
-    }
+        let response = await chain.proceed( request );
 
-    public postHandle( id: string, response: RetrofitResponse ): RetrofitResponse {
         if ( response.body.statusCode !== ResponseStatusEnum.UNAUTHORIZED.statusCode ) {
             return response;
         }
@@ -46,11 +42,14 @@ class AuthenticationInterceptor extends Interceptor {
         GLOBAL_CACHE.put( IS_RE_LOGIN, true );
         GLOBAL_CACHE.get( ROUTER_KEY ).push( { path: "/login" } );
 
-        throw new AuthenticationException( "It meaning you must login before access the website if you see this exception." );
+        return Promise.reject( new AuthenticationException(
+            "It meaning you must login before access the website if you see this exception."
+        ) );
     }
 }
 
 export default new FetchRetrofit.Builder()
     .baseUrl( REQUEST_ADDRESS )
+    .timeout( 0 )
     .addInterceptor( new AuthenticationInterceptor() )
     .build();

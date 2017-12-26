@@ -44,9 +44,9 @@
                     <Input type="text" v-model="menu.name" placeholder="菜单名不能为空"/>
                 </FormItem>
             </Form>
-            <Transfer :data="menu.roles" :targetKeys="menu.menuRole" :list-style="{ width: '200px' }"
-                      :titles="['角色列表', '可访问的角色']"
-                      @on-change="menuRoleChange" :render-format="transferRender"></Transfer>
+            <Transfer :data="menu.availableRole" :targetKeys="menu.targetRole" :list-style="{ width: '200px' }"
+                      :titles="['角色列表', '可访问的角色']" @on-change="menuRoleChange"
+                      :render-format="transferRender"></Transfer>
         </Row>
         </Col>
 
@@ -68,15 +68,13 @@
 
 <script>
     import { CoreUtils, HashMap, HashSet, ArrayDeque } from "@core";
-    import { menuClient, authorizationClient } from "@admin/rest/client";
+    import { menuClient, menuRoleClient, authorizationClient } from "@admin/rest/client";
     import { DataStatusEnum, ResponseStatusEnum } from "@admin/tools/constant";
     import { name } from "@/admin/tools/constant";
 
     export default {
         data() {
             return {
-                test: "",
-                roles: [],
                 selected: {
                     item: null,
                     roles: [],
@@ -93,8 +91,8 @@
 
                 menu: {
                     name: "",
-                    roles: [],
-                    menuRole: []
+                    targetRole: [],
+                    availableRole: []
                 },
 
                 tree: {
@@ -151,13 +149,10 @@
         },
         async mounted() {
             let menuResponse = await menuClient.getMenuTree(),
-                roleResponse = await authorizationClient.getRoles(),
                 tree = [];
 
             this.translateTo( tree, menuResponse.body.result );
             this.tree.root[ 0 ].children = tree;
-
-            this.roles = roleResponse.body.result.filter( role => role.name !== "ADMIN" );
         },
         methods: {
             translateTo( toMenus, fromMenus ) {
@@ -395,19 +390,17 @@
                     selected.item = data;
                 }
 
-                let menuResponse = await menuClient.queryMenuItemRoles( node.id );
+                let availableRoleResponse = menuRoleClient.queryAvailableRole( data.id ),
+                    existRolesResponse = menuRoleClient.queryMenuItemRoles( data.id ),
 
-                let menuRoles = menuResponse.body.result,
-                    filter = new HashSet(),
+                    availableRole = (await availableRoleResponse).body.result,
+                    existRole = (await existRolesResponse).body.result,
                     menu = this.menu;
 
-                menuRoles.forEach( role => filter.add( role.id ) );
-
                 selected.name = menu.name = data.title;
-                selected.roles = filter.toArray();      // role id list
+                selected.roles = existRole.map( role => role.id );      // role id list
 
-                // exist role
-                menu.menuRole = menuRoles.map( role => {
+                menu.availableRole = availableRole.concat( existRole ).map( role => {
                     return {
                         key: role.id,
                         label: role.name,
@@ -415,17 +408,10 @@
                     };
                 } );
 
-                // filter the role of the menu already exists.
-                menu.roles = this.roles.filter( role => !filter.contains( role.id ) ).map( role => {
-                    return {
-                        key: role.id,
-                        label: role.name,
-                        description: role.description
-                    };
-                } );
+                menu.targetRole = existRole.map( role => role.id );
             },
             menuRoleChange( targetKeys ) {
-                this.menu.menuRole = targetKeys;
+                this.menu.targetRole = targetKeys;
             },
             transferRender( item ) {
                 return `${item.label} - ${item.description}`;
@@ -434,13 +420,13 @@
                 let selected = this.selected,
                     menu = this.menu;
 
-                if ( selected.roles.length !== menu.menuRole.length ) {
+                if ( selected.roles.length !== menu.targetRole.length ) {
                     return true;
                 }
 
                 let exists = selected.roles;
-                for ( let role of menu.menuRole ) {
-                    if ( exists.indexOf( role ) < 0 ) {
+                for ( let roleId of menu.targetRole ) {
+                    if ( exists.indexOf( roleId ) < 0 ) {
                         return true;
                     }
                 }
@@ -492,9 +478,6 @@
                 modal.item = null;
                 modal.show = false;
                 modal.isFolder = "false";
-            },
-            saveMenuItem() {
-
             },
             async saveMenuTree() {
                 let tree = this.tree,
@@ -557,6 +540,41 @@
                 this.tree.root[ 0 ].children = container;
 
                 this.$Message.info( { content: "菜单已更新" } );
+            },
+            async saveMenuItem() {
+                if( !this.isModified() ) {
+                    return;
+                }
+
+                let selected = this.selected,
+                    menu = this.menu,
+
+                    targetRole = menu.targetRole,
+                    roles = selected.roles,
+
+                    theNews = targetRole.filter( id => roles.indexOf( id ) < 0 ),
+                    deletes = roles.filter( id => targetRole.indexOf( id ) < 0 );
+
+
+                let theNewsRequest, deletesRequest, renameRequest;
+                theNewsRequest = deletesRequest = renameRequest = Promise.resolve();
+
+                if ( theNews.length > 0 ) {
+                    theNewsRequest = await menuRoleClient.addRoleMenu( selected.item.id, theNews );
+                }
+
+                if ( deletes.length > 0 ) {
+                    deletesRequest = await menuRoleClient.removeRoleMenu( selected.item.id, deletes );
+                }
+
+                if ( selected.name !== menu.name ) {
+                    renameRequest = await menuClient.rename( selected.item.id, menu.name );
+                }
+
+                selected.name = menu.name;
+                selected.roles = targetRole;
+
+                this.$Message.info( { content: "已更新菜单信息" } );
             }
         }
     };

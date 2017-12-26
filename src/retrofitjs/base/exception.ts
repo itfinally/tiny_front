@@ -1,4 +1,4 @@
-import { Exception } from "../core/index";
+import { Exception } from "@/core";
 
 export class URLException extends Exception {
     constructor( message: string = "" ) {

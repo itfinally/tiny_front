@@ -308,6 +308,14 @@ export class StringUtils {
                 return args[ index++ ];
             } );
     }
+
+    static isBlank( str: string ): boolean {
+        return CoreUtils.isNone( str ) || /^ *$/.test( str );
+    }
+
+    static isNotBlank( str: string ): boolean {
+        return !StringUtils.isBlank( str );
+    }
 }
 
 interface EventListener {
@@ -373,7 +381,7 @@ export class EventEmitter {
     private task( fn: Function, args: any[] ): () => Promise<any> {
         return () => {
             try {
-                fn.apply( null, args );
+                fn( ...args );
 
             } catch ( log ) {
                 console.error( `function ${fn.name} raise an error in EventEmitter` );
@@ -489,7 +497,7 @@ export class EventEmitter {
             let listeners = events[ eventName ];
 
             if ( listeners instanceof EventEmitter.EventListener ) {
-                if( listeners.fn === listener ) {
+                if ( listeners.fn === listener ) {
                     delete events[ eventName ];
                 }
 
@@ -507,7 +515,7 @@ export class Dates {
     private constructor() {
     }
 
-    static toLocalDateTimeString( millis:number ): string {
+    static toLocalDateTimeString( millis: number ): string {
         let date = new Date( millis );
         return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
     }

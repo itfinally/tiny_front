@@ -7,4 +7,5 @@ node_modules
 test
 *.js.map
 src/**/*.js
+!src/retrofitjs/declare/proxy.js
 !src/admin/config/view_router.js

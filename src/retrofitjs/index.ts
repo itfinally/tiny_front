@@ -1,27 +1,13 @@
-import { decorators } from "./component";
+export { fetchClient, retrofitFetchClient } from "./base/fetch";
 
-import Args = decorators.Args;
-import Header = decorators.Header;
-import Headers = decorators.Headers;
-import RequestBody = decorators.RequestBody;
-import ResponseBody = decorators.ResponseBody;
-
-import MultiPart = decorators.MultiPart;
-import PutMapping = decorators.PutMapping;
-import GetMapping = decorators.GetMapping;
-import PostMapping = decorators.PostMapping;
-import DeleteMapping = decorators.DeleteMapping;
-import RequestMapping = decorators.RequestMapping;
-
-export { FetchRetrofit } from "./component";
-export { fetchClient, retrofitFetchClient } from "./fetch";
+export { FetchRetrofit } from "./core";
 
 export {
     Header, Headers, RequestMapping, RequestBody, ResponseBody, Args,
     MultiPart, PutMapping, GetMapping, PostMapping, DeleteMapping
-};
+} from "./base/decorators";
 
 export {
-    DataType, Interceptor, RetrofitRequest,
+    DataType, Interceptor, RetrofitRequest, Chain,
     RetrofitResponse, RequestMethod, RequestHeader
-} from "./support";
+} from "./base/support";

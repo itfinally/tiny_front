@@ -1,10 +1,6 @@
-import Promise from "ts-promise";
-
 import { TimeoutException } from "./exception";
 import { RetrofitRequest, RetrofitResponse } from "./support";
-import { IllegalArgumentException } from "../core/exception";
-
-let nativeFetch = window.fetch;
+import { IllegalArgumentException } from "@/core";
 
 // Whatever response or error, must be added to macro task queue( setTimeout ) rather than micro task queue( Promise ).
 //
@@ -31,7 +27,7 @@ export function fetchClient( input: string, init: RetrofitRequest ): Promise<Res
     let response: Promise<Response>,
         request = (): Promise<Response> => new Promise<Response>( ( resolve, reject ) => {
             try {
-                nativeFetch( input, init ).then(
+                fetch( input, init ).then(
                     response => setTimeout( () => resolve( response ), 0 ),
                     raise => reject( raise )
                 );

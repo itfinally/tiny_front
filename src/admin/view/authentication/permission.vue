@@ -30,6 +30,7 @@
     export default {
         data() {
             return {
+                tableAdapter: null,
                 tableSetting: {
                     width: 0,
                     height: 0
@@ -68,16 +69,17 @@
             };
         },
         async mounted() {
-            let permissions = await authorizationClient.getPermissions(),
-                tableResizer = rect => {
+            let permissions = await authorizationClient.getPermissions();
+
+            this.tableAdapter = rect => {
                     let tableSetting = this.tableSetting;
 
                     tableSetting.width = rect.width;
                     tableSetting.height = rect.height;
                 };
 
-            GLOBAL_EVENT_EMITTER.removeListener( FRAME_RECT, tableResizer );
-            GLOBAL_EVENT_EMITTER.on( FRAME_RECT, tableResizer );
+            GLOBAL_EVENT_EMITTER.removeListener( FRAME_RECT, this.tableAdapter );
+            GLOBAL_EVENT_EMITTER.on( FRAME_RECT, this.tableAdapter );
 
             this.table.data = permissions.body.result.map( data => {
                 data.createTime = Dates.toLocalDateTimeString( data.createTime );
@@ -86,6 +88,10 @@
                 data.status = DataStatusEnum.getNameByStatus( data.status );
                 return data;
             } );
+        },
+        destroyed() {
+            GLOBAL_EVENT_EMITTER.removeListener( FRAME_RECT, this.tableAdapter );
+            this.tableAdapter = null;
         }
     }
 </script>
