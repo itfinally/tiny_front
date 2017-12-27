@@ -36,7 +36,7 @@ export class RequestDetails {
     public args: Array<string> = [];
     public requestBody: string = "";
     public multiPart: Array<string> = [];
-    public responseBody: boolean = false;
+    public responseBody: boolean = <any>null;
     public method: RequestMethod = RequestMethod.NONE;
     public headers: Map<string, string> = new HashMap();
 }

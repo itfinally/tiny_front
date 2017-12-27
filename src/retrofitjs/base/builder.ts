@@ -1,5 +1,6 @@
 import { RequestDetails, RequestMethod, RetrofitRequest } from "./support";
 import { Set, HashSet, IllegalArgumentException, StringUtils, IllegalStateException } from "@/core";
+import { DataType } from "@/retrofitjs";
 
 let requestMethods: Set<RequestMethod> = new HashSet();
 
@@ -173,7 +174,7 @@ export class RequestBuilder {
         (RequestValidator.getRestfulExpression().test( this.details.url )
             ? this.createRestUrl()
             : this.createUrl())
-            .createMethod()
+            .createBasicInfo()
             .createHeaders();
 
         return this.request;
@@ -184,6 +185,9 @@ export class RequestBuilder {
 
         if ( RequestValidator.getRestfulExpression().test( details.url ) ) {
             this.createRestUrl();
+
+        } else {
+            this.request.url = details.url;
         }
 
         if ( details.requestBody ) {
@@ -196,7 +200,7 @@ export class RequestBuilder {
             this.createForm();
         }
 
-        return this.createMethod().createHeaders().request;
+        return this.createBasicInfo().createHeaders().request;
     }
 
     private createRestUrl(): this {
@@ -231,19 +235,20 @@ export class RequestBuilder {
         return this;
     }
 
-    private createMethod(): this {
+    private createBasicInfo(): this {
+        this.request.dataType = this.details.responseBody ? DataType.JSON : DataType.TEXT;
         this.request.method = this.details.method;
         return this;
     }
 
     private createHeaders(): this {
-        let headers: any = {};
+        let headers: { [key: string]: string } = {};
 
         for ( let entry of this.details.headers.entrySet() ) {
             headers[ entry.key ] = entry.value;
         }
 
-        this.details.headers = headers;
+        this.request.headers = headers;
         return this;
     }
 

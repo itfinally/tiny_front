@@ -117,8 +117,17 @@ export function getRequestDetail( target: object, method: string ): RequestDetai
     baseHeaders.keySet().toArray().concat( childHeaders.keySet().toArray() )
         .forEach( ( key: string ) => header.put( key, childHeaders.get( key ) || baseHeaders.get( key ) ) );
 
+    if ( CoreUtils.isBoolean( methodDetails.responseBody ) ) {
+        targetRequest.responseBody = methodDetails.responseBody;
+
+    } else if ( CoreUtils.isBoolean( constructorDetails.responseBody ) ) {
+        targetRequest.responseBody = constructorDetails.responseBody;
+
+    } else {
+        targetRequest.responseBody = false;
+    }
+
     targetRequest.method = (RequestMethod.NONE !== methodDetails.method ? methodDetails.method : constructorDetails.method);
-    targetRequest.responseBody = methodDetails.responseBody;
     targetRequest.requestBody = methodDetails.requestBody;
     targetRequest.multiPart = methodDetails.multiPart;
     targetRequest.args = methodDetails.args;
@@ -189,8 +198,8 @@ export function RequestBody( parameter: string ): Function {
     } );
 }
 
-export function ResponseBody(): Function {
-    return basicAnnotation( "responseBody", requestDetails => requestDetails.responseBody = true );
+export function ResponseBody( isTrue: boolean = true ): Function {
+    return basicAnnotation( "responseBody", requestDetails => requestDetails.responseBody = isTrue );
 }
 
 export function MultiPart( parameter: Array<string> ): Function {

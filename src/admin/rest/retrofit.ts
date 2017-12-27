@@ -15,7 +15,7 @@ class AuthenticationInterceptor implements Interceptor {
         let request = chain.request();
 
         if ( CoreUtils.isNone( request.headers ) ) {
-            request.headers = [];
+            request.headers = {};
         }
 
         // abort if not token
@@ -42,9 +42,7 @@ class AuthenticationInterceptor implements Interceptor {
         GLOBAL_CACHE.put( IS_RE_LOGIN, true );
         GLOBAL_CACHE.get( ROUTER_KEY ).push( { path: "/login" } );
 
-        return Promise.reject( new AuthenticationException(
-            "It meaning you must login before access the website if you see this exception."
-        ) );
+        return Promise.reject( new AuthenticationException() );
     }
 }
 

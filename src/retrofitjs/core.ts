@@ -135,7 +135,7 @@ export class FetchRetrofit {
         build(): FetchRetrofit {
             this.interceptorActor.addInterceptor( new RealCall() )
                 .addInterceptor( new LoggerInterceptor( this._debug ) )
-                .addInterceptor( new CacheInterceptor() )
+                // .addInterceptor( new CacheInterceptor() )
                 .addInterceptor( new ContentTypeInterceptor() )
                 .addInterceptor( new DeserializerInterceptor() );
 

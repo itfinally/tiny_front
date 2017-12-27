@@ -66,6 +66,21 @@
                   :page-size-opts="table.pageSizeOpts"
                   :show-total="true" :show-elevator="true" :show-sizer="true" placement="top"></Page>
         </Row>
+
+        <Modal title="修改用户信息" v-model="userUpdate.isShowModal"
+               @on-ok="modifyUserDetail" @on-cancel="userUpdateCancel">
+            <Form>
+                <FormItem label="昵称" :label-width="60">
+                    <Input v-model="userUpdate.nickname" type="text" placeholder="用户名"/>
+                </FormItem>
+                <FormItem label="用户状态" :label-width="60">
+                    <Select v-model="userUpdate.status" :value="0" style="width: 6rem;">
+                        <Option v-for="item in statusList" :value="item.status" :key="item.name">{{ item.name }}
+                        </Option>
+                    </Select>
+                </FormItem>
+            </Form>
+        </Modal>
     </Row>
 </template>
 <script>
@@ -77,6 +92,7 @@
         data() {
             return {
                 tableAdapter: null,
+
                 statusList: [ {
                     status: 1,
                     name: "正常"
@@ -87,6 +103,14 @@
                     status: 0,
                     name: "全选"
                 } ],
+
+                userUpdate: {
+                    isShowModal: false,
+
+                    id: "",
+                    nickname: "",
+                    status: 0
+                },
 
                 tableSetting: {
                     width: 0,
@@ -151,7 +175,16 @@
                                         type: "text",
                                         size: "small"
                                     },
-                                    on: { click: () => this.modifyUserDetail( row ) }
+                                    on: {
+                                        click: () => {
+                                            let update = this.userUpdate;
+                                            update.isShowModal = true;
+
+                                            update.id = row.id;
+                                            update.status = row.status;
+                                            update.nickname = row.nickname;
+                                        }
+                                    }
                                 }, "修改" )
                             ] );
                         }
@@ -256,13 +289,20 @@
 
             },
             async changeUserStatus( row, status ) {
-                let response = await userDetailClient.updateUserDetail( row.id, status, undefined );
+                await userDetailClient.updateUserDetail( row.id, status, undefined );
 
-                row.status = response.body.status;
-                row.statusName = DataStatusEnum.getNameByStatus( response.body.status );
+                row.status = status;
+                row.statusName = DataStatusEnum.getNameByStatus( status );
             },
-            async modifyUserDetail( row, status ) {
+            userUpdateCancel() {
+                this.userUpdate.isShowModal = false;
+                this.userUpdate.data = null;
+            },
+            async modifyUserDetail() {
+                let updates = this.userUpdate;
 
+                await userDetailClient.updateUserDetail( updates.id, updates.status, updates.nickname );
+                this.userUpdateCancel();
             }
         }
     }

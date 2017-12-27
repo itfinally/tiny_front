@@ -64,32 +64,28 @@ export async function authentication( account: string, password: String, validCo
 
 /// Http client declare
 
-
+@ResponseBody()
 @RequestMapping( "/menu" )
 class MenuClient {
 
-    @ResponseBody()
     @Args( "name", "isLeaf" )
     @PostMapping( "/added_root_menu/:name" )
     public addRootMenu( name: string, isLeaf: boolean ): Promise<any> {
         return <any>null;
     }
 
-    @ResponseBody()
     @PostMapping( "/added_menu" )
     @Args( "parentId", "name", "isLeaf" )
     public addMenu( parentId: string, name: string, isLeaf: boolean ): Promise<any> {
         return <any>null;
     }
 
-    @ResponseBody()
     @Args( "itemId" )
     @PostMapping( "/remove_menu_item" )
     public removeMenuItem( itemId: string ): Promise<any> {
         return <any>null;
     }
 
-    @ResponseBody()
     @Args( "itemIds" )
     @RequestBody( "itemIds" )
     @PostMapping( "/remove_multi_menu_item" )
@@ -97,14 +93,12 @@ class MenuClient {
         return <any>null;
     }
 
-    @ResponseBody()
     @Args( "itemId" )
     @PostMapping( "/recover_menu_item" )
     public recoverMenuItem( itemId: string ): Promise<any> {
         return <any>null;
     }
 
-    @ResponseBody()
     @Args( "itemIds" )
     @RequestBody( "itemIds" )
     @PostMapping( "/recover_menu_multi_item" )
@@ -112,38 +106,34 @@ class MenuClient {
         return <any>null;
     }
 
-    @ResponseBody()
     @Args( "menuId", "name" )
     @PostMapping( "/rename" )
     public rename( menuId: string, name: string ): Promise<any> {
         return <any>null;
     }
 
-    @ResponseBody()
     @GetMapping( "/get_menu_tree" )
     public getMenuTree(): Promise<any> {
         return <any>null;
     }
 }
 
+@ResponseBody()
 @RequestMapping( "/menu_role" )
 class MenuRoleClient {
 
-    @ResponseBody()
     @Args( "menuId" )
     @GetMapping( "/query_menu_item_roles/:menuId" )
     public queryMenuItemRoles( menuId: string ): Promise<any> {
         return <any>null;
     }
 
-    @ResponseBody()
     @Args( "menuId" )
     @GetMapping( "/query_available_role/:menuId" )
     public queryAvailableRole( menuId: string ): Promise<any> {
         return <any>null;
     }
 
-    @ResponseBody()
     @RequestBody( "roleIds" )
     @Args( "menuItemId", "roleIds" )
     @PostMapping( "/add_role_menu/:menuItemId" )
@@ -151,7 +141,6 @@ class MenuRoleClient {
         return <any>null;
     }
 
-    @ResponseBody()
     @RequestBody( "roleIds" )
     @Args( "menuItemId", "roleIds" )
     @PostMapping( "/remove_role_menu/:menuItemId" )
@@ -160,24 +149,22 @@ class MenuRoleClient {
     }
 }
 
+@ResponseBody()
 @RequestMapping( "/authorization" )
 class AuthorizationClient {
 
-    @ResponseBody()
     @Args( "name", "description" )
     @PostMapping( "/add_permission" )
     public addPermission( name: string, description: string ): Promise<any> {
         return <any>null;
     }
 
-    @ResponseBody()
     @PostMapping( "/add_role" )
     @Args( "name", "description" )
     public addRole( name: string, description: string ): Promise<any> {
         return <any>null;
     }
 
-    @ResponseBody()
     @RequestBody( "roleIds" )
     @Args( "authorityId", "roleIds" )
     @PostMapping( "/grant_role_to/:authorityId" )
@@ -185,7 +172,6 @@ class AuthorizationClient {
         return <any>null;
     }
 
-    @ResponseBody()
     @RequestBody( "permissionIds" )
     @Args( "roleId", "permissionIds" )
     @PostMapping( "/grant_permission_to/:roleId" )
@@ -193,19 +179,16 @@ class AuthorizationClient {
         return <any>null;
     }
 
-    @ResponseBody()
     @GetMapping( "/get_roles" )
     public getRoles(): Promise<any> {
         return <any>null;
     }
 
-    @ResponseBody()
     @GetMapping( "/get_permissions" )
     public getPermissions(): Promise<any> {
         return <any>null;
     }
 
-    @ResponseBody()
     @Args( "account" )
     @GetMapping( "/get_user_roles/:account" )
     public getUserRoles( account: string ): Promise<any> {
@@ -213,10 +196,10 @@ class AuthorizationClient {
     }
 }
 
+@ResponseBody()
 @RequestMapping( "/user" )
 class UserDetailClient {
 
-    @ResponseBody()
     @Args(
         "createStartTime", "createEndingTime", "updateStartTime", "updateEndingTime",
         "status", "nickname", "account", "page", "row"
@@ -229,7 +212,6 @@ class UserDetailClient {
         return <any>null;
     }
 
-    @ResponseBody()
     @Args( "id", "status", "name" )
     @PostMapping( "/update_user_detail" )
     public updateUserDetail( id: string, status: number, name: string ): Promise<any> {
