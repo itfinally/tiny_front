@@ -10,10 +10,8 @@ let login = ( r => require.ensure( [], () => r( require( "@admin/view/index/logi
     user = ( r => require.ensure( [], () => r( require( "@admin/view/authentication/user.vue" ) ), "authentication" ) );
 
 function prefixWith( prefix, routers ) {
-    return routers.map( router => {
-        router.path = `${prefix}/${router.path}`.replace( /\/{2,}/g, "/" );
-        return router;
-    } );
+    routers.forEach( router => router.path = `${prefix}/${router.path}`.replace( /\/{2,}/g, "/" ) );
+    return routers;
 }
 
 export default [ {
@@ -36,7 +34,7 @@ export default [ {
             "path": "menu_manager",
             "component": menuManager
         }, {
-            "path": "user/:params?",
+            "path": "user/:metadata?",
             "component": user
         } ] )
     ]

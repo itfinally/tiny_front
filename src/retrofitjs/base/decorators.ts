@@ -46,7 +46,7 @@ class Collector {
             part2: string = methodMapping.get( "none" );
 
         // not found!
-        if ( !(part1 && part2) ) {
+        if ( !( part1 && part2 ) ) {
             return <any>null;
         }
 
@@ -98,22 +98,21 @@ export function getRequestDetail( target: object, method: string ): RequestDetai
         methodDetails = Collector.getMethodDetails( constructor, method ),
         targetRequest = new RequestDetails();
 
-    if ( !(constructorDetails && methodDetails) ) {
+    if ( !( constructorDetails && methodDetails ) ) {
         throw new NullPointException(
             `Request Details is not found. Missing method proxy -> ${constructor.name}.${method}, 
                     It is a network request interface?`
         );
     }
 
-    targetRequest.url = (constructorDetails.url ? `${constructorDetails.url}/${methodDetails.url}` : methodDetails.url)
+    targetRequest.url = ( constructorDetails.url ? `${constructorDetails.url}/${methodDetails.url}` : methodDetails.url )
         .replace( /\w(\/{2,})\w?/, ( match: string, key: string ) => match.replace( key, "/" ) );
-
-    targetRequest.responseBody = constructorDetails.responseBody;
 
     let baseHeaders = constructorDetails.headers,
         childHeaders = methodDetails.headers,
         header = targetRequest.headers;
 
+    // headers merge
     baseHeaders.keySet().toArray().concat( childHeaders.keySet().toArray() )
         .forEach( ( key: string ) => header.put( key, childHeaders.get( key ) || baseHeaders.get( key ) ) );
 
@@ -127,7 +126,7 @@ export function getRequestDetail( target: object, method: string ): RequestDetai
         targetRequest.responseBody = false;
     }
 
-    targetRequest.method = (RequestMethod.NONE !== methodDetails.method ? methodDetails.method : constructorDetails.method);
+    targetRequest.method = ( RequestMethod.NONE !== methodDetails.method ? methodDetails.method : constructorDetails.method );
     targetRequest.requestBody = methodDetails.requestBody;
     targetRequest.multiPart = methodDetails.multiPart;
     targetRequest.args = methodDetails.args;

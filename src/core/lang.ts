@@ -6,7 +6,7 @@ import { IllegalStateException, NullPointException } from "./exception";
 // the operation will be overflow or getting an negative number.
 export const MAX_INTEGER = 2147483648;
 
-(() => {
+( () => {
     let constant = Object.create( null );
 
     Object.defineProperty( Object.prototype, "hashCode", {
@@ -17,7 +17,7 @@ export const MAX_INTEGER = 2147483648;
 
             if ( CoreUtils.isBaseType( this ) ) {
                 let key = this.toString();
-                if ( !(key in constant) ) {
+                if ( !( key in constant ) ) {
                     constant[ key ] = CoreUtils.hashCode( key );
                 }
 
@@ -40,10 +40,10 @@ export const MAX_INTEGER = 2147483648;
                 return hashCode;
             }
 
-            return (<any>this)._hashCode;
+            return ( <any>this )._hashCode;
         }
     } );
-})();
+} )();
 
 export class CoreUtils {
     private constructor() {
@@ -66,8 +66,8 @@ export class CoreUtils {
     }
 
     public static isSimpleObject( target: any ): boolean {
-        return null === Object.getPrototypeOf( target ) ||
-            (target instanceof Object && undefined === target.prototype);
+        return !CoreUtils.isNone( target ) && ( null === Object.getPrototypeOf( target )
+            || ( target instanceof Object && undefined === target.prototype ) );
     }
 
     public static isArrayLike( target: any ): boolean {
@@ -87,7 +87,7 @@ export class CoreUtils {
         let hash = 0;
         for ( let i = 0, length = target.length; i < length; i++ ) {
             let character = target.charCodeAt( i );
-            hash = ((hash << 5) - hash) + character;
+            hash = ( ( hash << 5 ) - hash ) + character;
             hash = hash & hash; // Convert to 32bit integer
         }
         return hash;
@@ -101,7 +101,7 @@ export class CoreUtils {
 
     public static base64Decoder( target: string ): string {
         return decodeURIComponent( atob( target ).split( "" ).map( function ( c ) {
-            return "%" + ("00" + c.charCodeAt( 0 ).toString( 16 )).slice( -2 );
+            return "%" + ( "00" + c.charCodeAt( 0 ).toString( 16 ) ).slice( -2 );
         } ).join( "" ) );
     }
 
@@ -168,7 +168,7 @@ export class CoreUtils {
             }
 
             if ( CoreUtils.isBaseType( value ) || value instanceof Function ) {
-                if ( !(value instanceof Function && ignoreFunction) ) {
+                if ( !( value instanceof Function && ignoreFunction ) ) {
                     to[ key ] = value;
                 }
 
@@ -203,8 +203,8 @@ export class CoreUtils {
     }
 
     static eq( target: any, src: any ): boolean {
-        if ( (!CoreUtils.isNone( target ) && CoreUtils.isNone( src )) ||
-            (CoreUtils.isNone( target ) && !CoreUtils.isNone( src )) ||
+        if ( ( !CoreUtils.isNone( target ) && CoreUtils.isNone( src ) ) ||
+            ( CoreUtils.isNone( target ) && !CoreUtils.isNone( src ) ) ||
             typeof target !== typeof src
         ) {
             return false;
@@ -296,12 +296,12 @@ export class StringUtils {
         }
 
         if ( !CoreUtils.isSimpleObject( kwArgs ) ) {
-            throw new TypeError( `Expect object type, but got ${typeof kwArgs}` );
+            kwArgs = Object.create( null );
         }
 
         return template
             .replace( /\${([\w\-_]+)}/g, ( match, name ) => {
-                return kwArgs.hasOwnProperty( name ) ? kwArgs[ name ] : match;
+                return name in kwArgs ? kwArgs[ name ] : match;
             } )
 
             .replace( /\$\?/g, () => {
@@ -349,11 +349,11 @@ export class EventEmitter {
             throw new TypeError( `Expect type string, but got ${typeof eventName}` );
         }
 
-        if ( !(listener instanceof Function) ) {
+        if ( !( listener instanceof Function ) ) {
             throw new TypeError( `Expect type function, but got ${typeof listener}` );
         }
 
-        if ( !(eventName in events) ) {
+        if ( !( eventName in events ) ) {
             events[ eventName ] = new EventEmitter.EventListener( listener, isOnce );
             return this;
         }
@@ -397,30 +397,30 @@ export class EventEmitter {
 
         listeners instanceof Function
             ? tasks.then( this.task( listeners, args ) )
-            : (<Function[]>listeners).forEach( listener => tasks = tasks.then( this.task( listener, args ) ) );
+            : ( <Function[]>listeners ).forEach( listener => tasks = tasks.then( this.task( listener, args ) ) );
     }
 
     public emit( eventName: string, ...args: any[] ): boolean {
         let events = this.events,
             maxListeners = this.maxListeners;
 
-        if ( !(eventName in events) ) {
+        if ( !( eventName in events ) ) {
             return false;
         }
 
         let listeners = events[ eventName ];
         if ( listeners instanceof EventEmitter.EventListener ) {
-            if ( (<EventListener>listeners).isOnce ) {
+            if ( ( <EventListener>listeners ).isOnce ) {
                 delete events[ eventName ];
             }
 
-            this.executor( (<EventListener>listeners).fn, args );
+            this.executor( ( <EventListener>listeners ).fn, args );
             return true;
         }
 
-        let fns = (<EventListener[]>listeners).slice( 0, maxListeners ).map( listener => listener.fn );
+        let fns = ( <EventListener[]>listeners ).slice( 0, maxListeners ).map( listener => listener.fn );
 
-        events[ eventName ] = (<EventListener[]>listeners).slice( 0, maxListeners )
+        events[ eventName ] = ( <EventListener[]>listeners ).slice( 0, maxListeners )
             .filter( listener => !listener.isOnce ).concat( listeners.slice( maxListeners ) );
 
         this.executor( fns, args );
@@ -434,7 +434,7 @@ export class EventEmitter {
     public listenerCount( eventName: string ): number {
         let events = this.events;
 
-        if ( !(eventName in events) ) {
+        if ( !( eventName in events ) ) {
             return 0;
         }
 
@@ -466,7 +466,7 @@ export class EventEmitter {
     public listeners( eventName: string ): EventListener | EventListener[] {
         let events = this.events;
 
-        if ( !(eventName in events) ) {
+        if ( !( eventName in events ) ) {
             return <any>null;
         }
 
@@ -474,7 +474,7 @@ export class EventEmitter {
 
         return listeners instanceof EventEmitter.EventListener
             ? new EventEmitter.EventListener( listeners.fn, listeners.isOnce )
-            : (<EventListener[]>listeners).map( listener => new EventEmitter.EventListener( listener.fn, listener.isOnce ) );
+            : ( <EventListener[]>listeners ).map( listener => new EventEmitter.EventListener( listener.fn, listener.isOnce ) );
     }
 
     public removeAllListeners( eventName: string ): this {
@@ -502,7 +502,7 @@ export class EventEmitter {
                 }
 
             } else {
-                events[ eventName ] = (<EventListener[]>listeners)
+                events[ eventName ] = ( <EventListener[]>listeners )
                     .filter( item => item.fn !== listener );
             }
         }

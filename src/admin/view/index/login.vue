@@ -9,7 +9,8 @@
 
     .login-banner {
         position: absolute;
-        top: 10rem;
+        text-align: center;
+        top: -5rem;
     }
 
     .forget-password-btn {
@@ -18,15 +19,20 @@
 
         cursor: pointer;
     }
+
+    #particles-js > canvas {
+        position: absolute;
+        z-index: -1;
+    }
 </style>
 
 <template>
-    <Row id="particles-js" type="flex" justify="center" align="middle">
-        <Row class="login-banner">
+    <Row id="particles-js" type="flex" justify="center" align="middle" style="justify-content: center;">
+        <Col class="login-form" span="6">
+        <Row class="login-banner" style="width: 90%">
             <img src="../../resources/login_banner.jpg"
                  style="width: 3rem; height: 3rem; border-radius: 100%;">
         </Row>
-        <Col class="login-form" span="6">
         <Form ref="loginForm" :model="loginForm" :rules="loginRule">
             <Form-item prop="account">
                 <Input type="text" v-model="loginForm.account" placeholder="账户">

@@ -21,8 +21,8 @@ export let
 
 
     // event name
-    MENU_INITIALIZE = "menuInitialize",
-    FRAME_RECT = "frameRect",
+    MENU_INITIALIZE = "menu-initialize",
+    FRAME_RECT = "frame-rect",
 
 
     // request address

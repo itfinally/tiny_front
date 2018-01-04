@@ -5,93 +5,76 @@
 </style>
 <template>
     <Row>
-        <Row type="flex" style="flex-direction: column; margin: .5rem 0; width: auto; max-height: 8rem;">
-            <Form :model="tableCondition" :label-width="60" inline>
-                <FormItem prop="account" :label-width="40" label="账户">
-                    <Input v-model="tableCondition.account" type="text" placeholder="账户"/>
-                </FormItem>
-                <FormItem prop="nickname" label="用户名">
-                    <Input v-model="tableCondition.nickname" type="text" placeholder="用户名"/>
-                </FormItem>
-                <FormItem label="用户状态">
-                    <Select v-model="tableCondition.status" :value="0" style="width: 6rem;">
-                        <Option v-for="item in statusList" :value="item.status" :key="item.name">{{ item.name }}
-                        </Option>
-                    </Select>
-                </FormItem>
-                <FormItem label="起始日期">
-                    <Row>
-                        <Col span="11">
-                        <DatePicker v-model="tableCondition.createStartTime" type="datetime"
-                                    placeholder="起始时间"></DatePicker>
-                        </Col>
-                        <Col span="2" style="text-align: center">
-                        -</Col>
-                        <Col span="11">
-                        <DatePicker v-model="tableCondition.createEndingTime" type="datetime"
-                                    placeholder="结束时间"></DatePicker>
-                        </Col>
-                    </Row>
-                </FormItem>
-                <FormItem label="修改日期">
-                    <Row>
-                        <Col span="11">
-                        <DatePicker v-model="tableCondition.updateStartTime" type="datetime"
-                                    placeholder="起始时间"></DatePicker>
-                        </Col>
-                        <Col span="2" style="text-align: center">
-                        -</Col>
-                        <Col span="11">
-                        <DatePicker v-model="tableCondition.updateEndingTime" type="datetime"
-                                    placeholder="结束时间"></DatePicker>
-                        </Col>
-                    </Row>
-                </FormItem>
-            </Form>
-            <Form inline>
-                <FormItem prop="user" :label-width="0">
-                    <Button>新建</Button>
-                </FormItem>
-                <FormItem prop="user" :label-width="0">
-                    <Button @click="beforeQuery">查询</Button>
-                </FormItem>
-            </Form>
-        </Row>
-        <Row>
-            <Table :width="tableSetting.width" :height="tableSetting.height"
-                   :columns="table.columns" :data="table.data"></Table>
-        </Row>
-        <Row style="margin: .5rem 0;">
-            <Page :current="table.current" :total="table.total" :page-size="table.pageSize"
-                  :page-size-opts="table.pageSizeOpts"
-                  :show-total="true" :show-elevator="true" :show-sizer="true" placement="top"></Page>
-        </Row>
+        <MultifunctionTable ref="table" :columns="table.columns" :data="table.data" :total="table.total"
+                            :statusList="statusList" @on-data-loading="beforeQuery" @on-data-insert="beforeCreateUser"
+                            @on-data-delete="removeAllUser"/>
 
-        <Modal title="修改用户信息" v-model="userUpdate.isShowModal"
-               @on-ok="modifyUserDetail" @on-cancel="userUpdateCancel">
+        <Modal title="修改用户信息" v-model="userUpdateModal.isShowModal"
+               @on-ok="modifyUserDetail" @on-cancel="userUpdateModalCancel">
             <Form>
                 <FormItem label="昵称" :label-width="60">
-                    <Input v-model="userUpdate.nickname" type="text" placeholder="用户名"/>
+                    <Input v-model="userUpdateModal.nickname" type="text" placeholder="昵称"/>
                 </FormItem>
                 <FormItem label="用户状态" :label-width="60">
-                    <Select v-model="userUpdate.status" :value="0" style="width: 6rem;">
-                        <Option v-for="item in statusList" :value="item.status" :key="item.name">{{ item.name }}
+                    <Select v-model="userUpdateModal.status" :value="0" style="width: 6rem;">
+                        <Option v-for="item in statusList.slice(0,2)" :value="item.status" :key="item.name">
+                            {{ item.name }}
                         </Option>
                     </Select>
+                </FormItem>
+            </Form>
+        </Modal>
+
+        <Modal title="新增用户" v-model="userSaveModal.isShowModal"
+               @on-ok="saveUserDetail" @on-cancel="userSaveModalCancel">
+            <Form ref="userSaveModal" :model="userSaveModal" :rules="userSaveModal.rules">
+                <FormItem label="账户" :label-width="60" prop="account" style="height: 3rem;">
+                    <Input v-model="userSaveModal.account" type="text" placeholder="账户"/>
+                </FormItem>
+                <FormItem label="昵称" :label-width="60" prop="nickname" style="height: 3rem;">
+                    <Input v-model="userSaveModal.nickname" type="text" placeholder="昵称"/>
+                </FormItem>
+                <FormItem label="密码" :label-width="60" prop="password" style="height: 3rem;">
+                    <Input v-model="userSaveModal.password" type="password" placeholder="密码"/>
                 </FormItem>
             </Form>
         </Modal>
     </Row>
 </template>
 <script>
-    import { CoreUtils, StringUtils, Dates } from "@core";
+    import MultifunctionTable from "@admin/component/multifunctionTable.vue";
+
+    import { CoreUtils, StringUtils, Dates, HashMap } from "@core";
     import { userDetailClient } from "@admin/rest/client";
-    import { GLOBAL_EVENT_EMITTER, FRAME_RECT, DataStatusEnum } from "@admin/tools/constant";
+    import { ResponseStatusEnum, DataStatusEnum } from "@admin/tools/constant";
 
     export default {
+        components: { MultifunctionTable },
         data() {
             return {
-                tableAdapter: null,
+                userUpdateModal: {
+                    isShowModal: false,
+                    data: null,
+                    title: "",
+
+                    id: "",
+                    status: 0,
+                    nickname: ""
+                },
+
+                userSaveModal: {
+                    isShowModal: false,
+
+                    account: "",
+                    nickname: "",
+                    password: "",
+
+                    rules: {
+                        account: [ { required: true, message: "请填写账户" } ],
+                        nickname: [ { required: true, message: "请填写昵称" } ],
+                        password: [ { required: true, message: "请填写密码" } ]
+                    }
+                },
 
                 statusList: [ {
                     status: 1,
@@ -104,31 +87,12 @@
                     name: "全选"
                 } ],
 
-                userUpdate: {
-                    isShowModal: false,
-
-                    id: "",
-                    nickname: "",
-                    status: 0
-                },
-
-                tableSetting: {
-                    width: 0,
-                    height: 0
-                },
-
-                tableCondition: {
-                    createStartTime: "",
-                    createEndingTime: "",
-                    updateStartTime: "",
-                    updateEndingTime: "",
-                    nickname: "",
-                    account: "",
-                    status: 0
-                },
-
                 table: {
                     columns: [ {
+                        type: "selection",
+                        align: "center",
+                        width: 60
+                    }, {
                         title: "id",
                         key: "id"
                     }, {
@@ -177,12 +141,13 @@
                                     },
                                     on: {
                                         click: () => {
-                                            let update = this.userUpdate;
-                                            update.isShowModal = true;
+                                            let modal = this.userUpdateModal;
+                                            modal.isShowModal = true;
+                                            modal.data = row;
 
-                                            update.id = row.id;
-                                            update.status = row.status;
-                                            update.nickname = row.nickname;
+                                            modal.id = row.id;
+                                            modal.status = row.status;
+                                            modal.nickname = row.nickname;
                                         }
                                     }
                                 }, "修改" )
@@ -191,65 +156,50 @@
                     } ],
 
                     data: [],
-                    cache: [],
-
-                    total: 100,
-                    current: 1,
-                    pageSize: 10,
-                    pageSizeOpts: [ 10, 20, 40, 80, 160 ]
+                    total: 0
                 }
             }
         },
-        mounted() {
-            this.tableAdapter = rect => {
-                let tableSetting = this.tableSetting;
+        async mounted() {
+            let [ page, range, condition ] = await this.getTableMetaData(),
+                currentRoute = this.$router.history.current;
 
-                tableSetting.width = rect.width;
-                tableSetting.height = rect.height;
-            };
-
-            GLOBAL_EVENT_EMITTER.removeListener( FRAME_RECT, this.tableAdapter );
-            GLOBAL_EVENT_EMITTER.on( FRAME_RECT, this.tableAdapter );
-
-            try {
-                let current = this.$router.history.current;
-                if ( CoreUtils.isNone( current.params.params ) ) {
-                    this.beforeQuery();
-                }
-
-                let params = JSON.parse( this.$router.history.current.params.params );
-                if ( typeof params !== "object" ) {
-                    this.beforeQuery();
-                    return;
-                }
-
-                let condition = this.tableCondition;
-                CoreUtils.deepCopy( condition, params );
-
-                this.query();
-
-            } catch ( e ) {
-                this.beforeQuery();
+            if ( CoreUtils.isNone( currentRoute.params.metadata ) ) {
+                this.beforeQuery( page, range, condition );
+                return;
             }
-        },
-        destroyed() {
-            GLOBAL_EVENT_EMITTER.removeListener( FRAME_RECT, this.tableAdapter );
-            this.tableAdapter = null;
+
+            let metadata = JSON.parse( currentRoute.params.metadata );
+            if ( typeof metadata !== "object" ) {
+                this.beforeQuery( page, range, condition );
+                return;
+            }
+
+            [ page, range, condition ] = metadata;
+            this.$refs.table.$emit( "table-condition-update-request", page, range, condition );
+            this.beforeQuery( page, range, condition );
         },
         methods: {
-            beforeQuery() {
-                let condition = this.tableCondition,
-                    pueCondition = Object.create( null );
+            getTableMetaData() {
+                let tableComponent = this.$refs.table,
+                    request = new Promise( resolve => tableComponent.$once( "table-condition-response",
+                        ( page, range, condition ) => resolve( [ page, range, condition ] ) ) );
 
-                Object.keys( this.tableCondition ).forEach( key => pueCondition[ key ] =
-                    (condition[ key ] instanceof Date ? condition[ key ].getTime() : condition[ key ]) );
+                tableComponent.$emit( "table-condition-request" );
 
-                this.$router.replace( `/index/auth/user/${encodeURIComponent( JSON.stringify( pueCondition ) )}` );
+                return request;
             },
-            async query() {
-                let table = this.table,
-                    condition = this.tableCondition,
+            beforeQuery( page, range, condition ) {
+                let pureCondition = Object.create( null );
 
+                Object.keys( condition ).forEach( key => pureCondition[ key ] =
+                    ( condition[ key ] instanceof Date ? condition[ key ].getTime() : condition[ key ] ) );
+
+                this.$router.replace( `/index/auth/user/${encodeURIComponent( JSON.stringify( [ page, range, pureCondition ] ) )}` );
+                setTimeout( () => this.query( page, range, condition ), 0 );
+            },
+            async query( page, range, condition ) {
+                let
                     // date component variable is a string type by default,
                     // but it will change to a number type when you selected.
                     createStartTime = StringUtils.isBlank( condition.createStartTime ) ? 0 : condition.createStartTime,
@@ -257,52 +207,148 @@
                     updateStartTime = StringUtils.isBlank( condition.updateStartTime ) ? 0 : condition.updateStartTime,
                     updateEndingTime = StringUtils.isBlank( condition.updateEndingTime ) ? 0 : condition.updateEndingTime,
 
+                    id = condition.id,
                     status = condition.status,
-                    account = condition.account,
                     nickname = condition.nickname,
 
-                    response = await userDetailClient.queryByMultiCondition(
+                    users = ( await userDetailClient.queryByMultiCondition(
                         createStartTime, createEndingTime, updateStartTime, updateEndingTime,
-                        status, nickname, account, table.current - 1, table.pageSize
-                    ),
+                        status, nickname, id, page - 1, range
+                    ) ).body.result;
 
-                    buffer = response.body.result.map( item => {
-                        return {
-                            id: item.id,
-                            status: item.status,
-                            statusName: DataStatusEnum.getNameByStatus( item.status ),
-                            createTime: Dates.toLocalDateTimeString( item.createTime ),
-                            updateTime: Dates.toLocalDateTimeString( item.updateTime ),
-                            deleteTime: item.deleteTime <= 0 ? "" : Dates.toLocalDateTimeString( item.deleteTime ),
-                            account: item.account,
-                            nickname: item.nickname,
-                            authorityId: item.authorityId
-                        };
-                    } ),
+                this.table.total = ( await userDetailClient.countByMultiCondition(
+                    createStartTime, createEndingTime, updateStartTime,
+                    updateEndingTime, status, nickname, id
+                ) ).body.result;
 
-                    tableData = table.data,
-                    asyncRender = new Promise( resolve => resolve( tableData.push( buffer.shift() ) ) );
-
-                while ( buffer.length > 0 ) {
-                    asyncRender = asyncRender.then( Promise.resolve( tableData.push( buffer.shift() ) ) );
-                }
-
+                this.table.data = users.map( item => {
+                    return {
+                        id: item.id,
+                        status: item.status,
+                        statusName: DataStatusEnum.getNameByStatus( item.status ),
+                        createTime: Dates.toLocalDateTimeString( item.createTime ),
+                        updateTime: Dates.toLocalDateTimeString( item.updateTime ),
+                        deleteTime: item.deleteTime <= 0 ? "" : Dates.toLocalDateTimeString( item.deleteTime ),
+                        account: item.account,
+                        nickname: item.nickname,
+                        authorityId: item.authorityId
+                    };
+                } );
             },
             async changeUserStatus( row, status ) {
-                await userDetailClient.updateUserDetail( row.id, status, undefined );
+                let response = await userDetailClient.updateUserDetail( row.id, status, row.nickname );
+
+                if ( response.body.statusCode !== ResponseStatusEnum.SUCCESS.statusCode ) {
+                    this.$Message.warning( { "content": `${status === DataStatusEnum.DELETE.status ? "删除" : "恢复"}失败` } );
+                    return;
+                }
 
                 row.status = status;
                 row.statusName = DataStatusEnum.getNameByStatus( status );
+
+                row.deleteTime = status !== DataStatusEnum.DELETE.status ? "" :
+                    Dates.toLocalDateTimeString( ( Date.now || new Date().getTime )() );
+
+                this.$Message.success( { "content": `${status === DataStatusEnum.DELETE.status ? "删除" : "恢复"}成功` } );
             },
-            userUpdateCancel() {
-                this.userUpdate.isShowModal = false;
-                this.userUpdate.data = null;
+
+            userUpdateModalCancel() {
+                let modal = this.userUpdateModal;
+
+                modal.isUpdate = modal.isShowModal = false;
+                modal.data = null;
             },
             async modifyUserDetail() {
-                let updates = this.userUpdate;
+                let modal = this.userUpdateModal,
+                    row = modal.data,
+                    response = await userDetailClient.updateUserDetail( modal.id, modal.status, modal.nickname );
 
-                await userDetailClient.updateUserDetail( updates.id, updates.status, updates.nickname );
-                this.userUpdateCancel();
+                if ( response.body.statusCode !== ResponseStatusEnum.SUCCESS.statusCode ) {
+                    this.$Message.error( { "content": `更新失败 -> ${response.body.message}` } );
+                    return;
+                }
+
+                row.status = modal.status;
+                row.nickname = modal.nickname;
+                row.statusName = DataStatusEnum.getNameByStatus( modal.status );
+
+                row.deleteTime = modal.status !== DataStatusEnum.DELETE.status ? "" :
+                    Dates.toLocalDateTimeString( ( Date.now || new Date().getTime )() );
+
+                this.$Message.success( { "content": "更新成功" } );
+
+                this.userUpdateModalCancel();
+            },
+
+            beforeCreateUser() {
+                this.userSaveModal.isShowModal = true;
+            },
+            userSaveModalCancel() {
+                this.$refs[ "userSaveModal" ].resetFields();
+            },
+            async saveUserDetail() {
+                let modal = this.userSaveModal,
+                    account = modal.account,
+                    nickname = modal.nickname,
+                    password = modal.password;
+
+                if ( StringUtils.isBlank( account ) ) {
+                    this.$Message.warning( { "content": "请填写账户" } );
+                    setTimeout( () => modal.isShowModal = true, 0 );
+                    return;
+                }
+
+                if ( StringUtils.isBlank( nickname ) ) {
+                    this.$Message.warning( { "content": "请填写昵称" } );
+                    setTimeout( () => modal.isShowModal = true, 0 );
+                    return;
+                }
+
+                if ( StringUtils.isBlank( password ) ) {
+                    this.$Message.warning( { "content": "请填写密码" } );
+                    setTimeout( () => modal.isShowModal = true, 0 );
+                    return;
+                }
+
+                let user = CoreUtils.base64Encoder( `${account}:${nickname}:${password}` ),
+                    response = await userDetailClient.register( user );
+
+                response.body.statusCode === ResponseStatusEnum.SUCCESS.statusCode
+                    ? this.$Message.success( { "content": "创建成功" } )
+                    : this.$Message.error( { "content": `创建失败 -> ${response.body.message}` } );
+
+                this.userSaveModalCancel();
+            },
+
+            async removeAllUser( selected ) {
+                if ( selected.length <= 0 ) {
+                    this.$Message.warning( { content: "请选择要删除的用户" } );
+                    return;
+                }
+
+                let userIds = selected.map( user => user.id ),
+                    response = await userDetailClient.updateUserStatus( DataStatusEnum.DELETE.status, userIds );
+
+                if ( response.body.statusCode !== ResponseStatusEnum.SUCCESS.statusCode ) {
+                    this.$Message.warning( { "content": "删除失败" } );
+
+                } else {
+                    let user,
+                        rows = new HashMap();
+
+                    this.$refs.table.table.data.map( user => rows.put( user.id, user ) );
+
+                    // only modify by table data rows
+                    selected.forEach( item => {
+                        user = rows.get( item.id );
+
+                        user.status = DataStatusEnum.DELETE.status;
+                        user.statusName = DataStatusEnum.getNameByStatus( user.status );
+                        user.deleteTime = Dates.toLocalDateTimeString( ( Date.now || new Date().getTime )() )
+                    } );
+
+                    this.$Message.success( { "content": "删除成功" } );
+                }
             }
         }
     }

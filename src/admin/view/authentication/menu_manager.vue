@@ -463,7 +463,7 @@
                 tree.exists.add( modal.name );
                 tree.newNodeDetails.offerFirst( {
                     parent: modal.isRoot ? null : { id: data.id, name: data.title },
-                    isLeaf: "true" !== modal.isFolder,
+                    isLeaf: modal.isFolder !== "true",
                     isRoot: modal.isRoot,
                     name: modal.name,
                     checkCount: 0       // avoid dead loop

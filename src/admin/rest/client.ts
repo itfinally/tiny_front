@@ -199,22 +199,45 @@ class AuthorizationClient {
 @ResponseBody()
 @RequestMapping( "/user" )
 class UserDetailClient {
-
     @Args(
         "createStartTime", "createEndingTime", "updateStartTime", "updateEndingTime",
-        "status", "nickname", "account", "page", "row"
+        "status", "nickname", "id", "page", "row"
     )
     @PostMapping( "/query_by_multi_condition" )
     public queryByMultiCondition( createStartTime: number, createEndingTime: number,
                                   updateStartTime: number, updateEndingTime: number,
-                                  status: number, nickname: string, account: string,
+                                  status: number, nickname: string, id: string,
                                   page: number, row: number ): Promise<any> {
+        return <any>null;
+    }
+
+    @Args(
+        "createStartTime", "createEndingTime", "updateStartTime", "updateEndingTime",
+        "status", "nickname", "id"
+    )
+    @PostMapping( "/count_by_multi_condition" )
+    public countByMultiCondition( createStartTime: number, createEndingTime: number,
+                                  updateStartTime: number, updateEndingTime: number,
+                                  status: number, nickname: string, id: string ): Promise<any> {
         return <any>null;
     }
 
     @Args( "id", "status", "name" )
     @PostMapping( "/update_user_detail" )
     public updateUserDetail( id: string, status: number, name: string ): Promise<any> {
+        return <any>null;
+    }
+
+    @RequestBody( "userIds" )
+    @Args( "status", "userIds" )
+    @PostMapping( "/update_user_status/:status" )
+    public updateUserStatus( status: number, userIds: string[] ): Promise<any> {
+        return <any>null;
+    }
+
+    @Args( "user" )
+    @PostMapping( "/register" )
+    public register( user: string ): Promise<any> {
         return <any>null;
     }
 }

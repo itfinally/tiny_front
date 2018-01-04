@@ -90,7 +90,7 @@
 </template>
 
 <script>
-    import { HashMap, HashSet } from "@core/index";
+    import { HashMap } from "@core/index";
     import { menuClient } from "@admin/rest/client";
 
     import {
@@ -107,8 +107,8 @@
                 menus: {
                     members: [],
 
-                    show: true,
                     span: 4,
+                    show: true,
                     memberWidth: "auto"
                 }
             }
@@ -124,25 +124,21 @@
             GLOBAL_EVENT_EMITTER.emit( MENU_INITIALIZE, menusItems );
             GLOBAL_CACHE.put( MENU_ITEMS, menusItems );
 
-            // menus setting
-            let navMenu = this.$refs.navMenu.$el;
-            menus.memberWidth = `${Math.floor( navMenu.getBoundingClientRect().width )}px`;
-
             // create frame notification
             let timer,
                 frameModifiedNotification = this.frameModifiedNotification.bind( this );
 
-            //
+            // reset immediately
             setTimeout( frameModifiedNotification, 0 );
 
-            //
+            // active sender
             window.onresize = () => {
                 clearTimeout( timer );
                 timer = setTimeout( frameModifiedNotification, 300 );
             };
 
             // help gc
-            response = menus = null;
+            response = menusItems = menus = null;
         },
         methods: {
             translateTo( menu, table = new HashMap(), root = null ) {
