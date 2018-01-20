@@ -69,14 +69,14 @@ export async function authentication( account: string, password: String, validCo
 class MenuClient {
 
     @Args( "name", "isLeaf" )
-    @PostMapping( "/added_root_menu/:name" )
+    @PostMapping( "/added_root_menu" )
     public addRootMenu( name: string, isLeaf: boolean ): Promise<any> {
         return <any>null;
     }
 
     @PostMapping( "/added_menu" )
-    @Args( "parentId", "name", "isLeaf" )
-    public addMenu( parentId: string, name: string, isLeaf: boolean ): Promise<any> {
+    @Args( "parentId", "name", "path", "isLeaf" )
+    public addMenu( parentId: string, name: string, path: string, isLeaf: boolean ): Promise<any> {
         return <any>null;
     }
 
@@ -106,9 +106,9 @@ class MenuClient {
         return <any>null;
     }
 
-    @Args( "menuId", "name" )
-    @PostMapping( "/rename" )
-    public rename( menuId: string, name: string ): Promise<any> {
+    @Args( "menuId", "name", "path" )
+    @PostMapping( "/update_menu" )
+    public updateMenu( menuId: string, name: string, path: string ): Promise<any> {
         return <any>null;
     }
 
@@ -178,31 +178,12 @@ class AuthorizationClient {
     public grantPermissionTo( roleId: string, permissionIds: string[] ): Promise<any> {
         return <any>null;
     }
-
-    @GetMapping( "/get_roles" )
-    public getRoles(): Promise<any> {
-        return <any>null;
-    }
-
-    @GetMapping( "/get_permissions" )
-    public getPermissions(): Promise<any> {
-        return <any>null;
-    }
-
-    @Args( "account" )
-    @GetMapping( "/get_user_roles/:account" )
-    public getUserRoles( account: string ): Promise<any> {
-        return <any>null;
-    }
 }
 
 @ResponseBody()
 @RequestMapping( "/user" )
 class UserDetailClient {
-    @Args(
-        "createStartTime", "createEndingTime", "updateStartTime", "updateEndingTime",
-        "status", "nickname", "id", "page", "row"
-    )
+    @Args( "createStartTime", "createEndingTime", "updateStartTime", "updateEndingTime", "status", "nickname", "id", "page", "row" )
     @PostMapping( "/query_by_multi_condition" )
     public queryByMultiCondition( createStartTime: number, createEndingTime: number,
                                   updateStartTime: number, updateEndingTime: number,
@@ -211,10 +192,7 @@ class UserDetailClient {
         return <any>null;
     }
 
-    @Args(
-        "createStartTime", "createEndingTime", "updateStartTime", "updateEndingTime",
-        "status", "nickname", "id"
-    )
+    @Args( "createStartTime", "createEndingTime", "updateStartTime", "updateEndingTime", "status", "nickname", "id" )
     @PostMapping( "/count_by_multi_condition" )
     public countByMultiCondition( createStartTime: number, createEndingTime: number,
                                   updateStartTime: number, updateEndingTime: number,
@@ -229,9 +207,9 @@ class UserDetailClient {
     }
 
     @RequestBody( "userIds" )
-    @Args( "status", "userIds" )
+    @Args( "userIds", "status" )
     @PostMapping( "/update_user_status/:status" )
-    public updateUserStatus( status: number, userIds: string[] ): Promise<any> {
+    public updateUserStatus( userIds: string[], status: number ): Promise<any> {
         return <any>null;
     }
 
@@ -240,10 +218,116 @@ class UserDetailClient {
     public register( user: string ): Promise<any> {
         return <any>null;
     }
+
+    @RequestBody( "roleIds" )
+    @Args( "userId", "roleIds" )
+    @PostMapping( "/grant_roles_to/:userId" )
+    public grantRolesTo( userId: string, roleIds: string[] ): Promise<any> {
+        return <any>null;
+    }
 }
 
-export let
+@ResponseBody()
+@RequestMapping( "/permission" )
+class PermissionClient {
+
+    @Args( "createStartTime", "createEndingTime", "updateStartTime", "updateEndingTime", "status", "id", "page", "row" )
+    @PostMapping( "/query_by_multi_condition" )
+    public queryByMultiCondition( createStartTime: number, createEndingTime: number, updateStartTime: number, updateEndingTime: number,
+                                  status: number, id: string, page: number, row: number ): Promise<any> {
+        return <any>null;
+    }
+
+    @Args( "createStartTime", "createEndingTime", "updateStartTime", "updateEndingTime", "status", "id" )
+    @PostMapping( "/count_by_multi_condition" )
+    public countByMultiCondition( createStartTime: number, createEndingTime: number, updateStartTime: number, updateEndingTime: number,
+                                  status: number, id: string ): Promise<any> {
+        return <any>null;
+    }
+
+    @Args( "id", "name", "description", "status" )
+    @PostMapping( "/update_permission_detail" )
+    public updatePermissionDetail( id: string, name: string, description: string, status: number ): Promise<any> {
+        return <any>null;
+    }
+
+    @RequestBody( "ids" )
+    @Args( "ids", "status" )
+    @PostMapping( "/update_permission_status/:status" )
+    public updatePermissionStatus( permissionIds: string[], status: number ): Promise<any> {
+        return <any>null;
+    }
+
+    @GetMapping( "/get_permissions" )
+    public getPermissions(): Promise<any> {
+        return <any>null;
+    }
+
+    @Args( "roleId" )
+    @GetMapping( "/get_specific_role_permissions/:roleId" )
+    public getSpecificRolePermissions( roleId: string ) : Promise<any> {
+        return <any>null;
+    }
+}
+
+@ResponseBody()
+@RequestMapping( "/role" )
+class RoleClient {
+    @Args( "createStartTime", "createEndingTime", "updateStartTime", "updateEndingTime", "status", "id", "page", "row" )
+    @PostMapping( "/query_by_multi_condition" )
+    public queryByMultiCondition( createStartTime: number, createEndingTime: number, updateStartTime: number, updateEndingTime: number,
+                                  status: number, id: string, page: number, row: number ): Promise<any> {
+        return <any>null;
+    }
+
+    @Args( "createStartTime", "createEndingTime", "updateStartTime", "updateEndingTime", "status", "id" )
+    @PostMapping( "/count_by_multi_condition" )
+    public countByMultiCondition( createStartTime: number, createEndingTime: number, updateStartTime: number, updateEndingTime: number,
+                                  status: number, id: string ): Promise<any> {
+        return <any>null;
+    }
+
+    @Args( "id", "name", "description", "status" )
+    @PostMapping( "/update_role_detail" )
+    public updateRoleDetail( id: string, name: string, description: string, status: number ): Promise<any> {
+        return <any>null;
+    }
+
+    @RequestBody( "ids" )
+    @Args( "ids", "status" )
+    @PostMapping( "/update_role_status/:status" )
+    public updateRoleStatus( roleIds: string[], status: number ): Promise<any> {
+        return <any>null;
+    }
+
+    @RequestBody( "permissionIds" )
+    @Args( "roleId", "permissionIds" )
+    @PostMapping( "/grant_permission_to/:roleId" )
+    public grantPermissionsTo( roleId: string, permissionIds: string[] ): Promise<any> {
+        return <any>null;
+    }
+
+    @GetMapping( "/get_roles" )
+    public getRoles(): Promise<any> {
+        return <any>null;
+    }
+
+    @Args( "userId" )
+    @GetMapping( "/get_specific_user_roles/:userId" )
+    public getSpecificUserRoles( userId: string ): Promise<any> {
+        return <any>null;
+    }
+}
+
+let
     menuClient: MenuClient = retrofit.create( MenuClient ),
     menuRoleClient: MenuRoleClient = retrofit.create( MenuRoleClient ),
     userDetailClient: UserDetailClient = retrofit.create( UserDetailClient ),
-    authorizationClient: AuthorizationClient = retrofit.create( AuthorizationClient );
+    authorizationClient: AuthorizationClient = retrofit.create( AuthorizationClient ),
+    permissionClient: PermissionClient = retrofit.create( PermissionClient ),
+    roleClient: RoleClient = retrofit.create( RoleClient );
+
+export {
+    menuClient, menuRoleClient, userDetailClient, authorizationClient,
+    permissionClient, roleClient
+};

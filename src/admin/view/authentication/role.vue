@@ -1,20 +1,20 @@
 <template>
     <Row>
         <MultiFunctionTable ref="table" :columns="table.columns" :data="table.data" :total="table.total"
-                            @on-data-loading="beforeQuery" @on-data-insert="beforeCreatePermission"
-                            @on-data-delete="removeAllPermission"/>
+                            @on-data-loading="beforeQuery" @on-data-insert="beforeCreateRole"
+                            @on-data-delete="removeAllRole"/>
 
-        <Modal title="修改权限信息" v-model="permissionUpdateModal.isShowModal"
-               @on-ok="modifyPermission">
+        <Modal title="修改权限信息" v-model="roleUpdateModal.isShowModal"
+               @on-ok="modifyRole">
             <Form>
-                <FormItem label="权限名" :label-width="60">
-                    <Input v-model="permissionUpdateModal.name" type="text" placeholder="权限名"/>
+                <FormItem label="角色名" :label-width="60">
+                    <Input v-model="roleUpdateModal.name" type="text" placeholder="角色名"/>
                 </FormItem>
-                <FormItem label="权限描述" :label-width="60">
-                    <Input v-model="permissionUpdateModal.description" type="text" placeholder="权限描述"/>
+                <FormItem label="角色描述" :label-width="60">
+                    <Input v-model="roleUpdateModal.description" type="text" placeholder="角色描述"/>
                 </FormItem>
-                <FormItem label="权限状态" :label-width="60">
-                    <Select v-model="permissionUpdateModal.status" style="width: 6rem;">
+                <FormItem label="角色状态" :label-width="60">
+                    <Select v-model="roleUpdateModal.status" style="width: 6rem;">
                         <Option v-for="item in statusList.slice(0,2)" :value="item.status" :key="item.name">
                             {{ item.name }}
                         </Option>
@@ -23,17 +23,23 @@
             </Form>
         </Modal>
 
-        <Modal title="新增权限" v-model="permissionSaveModal.isShowModal"
-               @on-ok="savePermissionModal" @on-cancel="permissionSaveModalCancel">
-            <Form ref="permissionSaveModal" :model="permissionSaveModal" :rules="permissionSaveModal.rules"
-                  :label-width="80">
-                <FormItem label="权限名" prop="name" style="height: 3rem;">
-                    <Input v-model="permissionSaveModal.name" type="text" placeholder="权限名"/>
+        <Modal title="新增权限" v-model="roleSaveModal.isShowModal"
+               @on-ok="saveRoleModal" @on-cancel="roleSaveModalCancel">
+            <Form ref="roleSaveModal" :model="roleSaveModal" :rules="roleSaveModal.rules" :label-width="80">
+                <FormItem label="角色名" prop="name" style="height: 3rem;">
+                    <Input v-model="roleSaveModal.name" type="text" placeholder="角色名"/>
                 </FormItem>
-                <FormItem label="权限描述" prop="description" style="height: 3rem;">
-                    <Input v-model="permissionSaveModal.description" type="text" placeholder="权限描述"/>
+                <FormItem label="角色描述" prop="description" style="height: 3rem;">
+                    <Input v-model="roleSaveModal.description" type="text" placeholder="角色描述"/>
                 </FormItem>
             </Form>
+        </Modal>
+
+        <Modal title="权限分配" v-model="permissionModal.isShowModal" @on-ok="modifyRolePermission">
+            <Transfer :data="permissionModal.permissions" :targetKeys="permissionModal.existPermission"
+                      :list-style="{ width: '215px' }" :titles="['权限列表', '角色权限']"
+                      @on-change="onPermissionChange">
+            </Transfer>
         </Modal>
     </Row>
 </template>
@@ -42,16 +48,18 @@
     import MultiFunctionTable from "@admin/component/ui/multi_function_table";
     import MultiFunctionTableComponent from "@admin/component/multi_function_table_component";
 
-    import { Dates, StringUtils } from "@/core"
-    import { DataStatusEnum, ResponseStatusEnum } from "@/admin/tools/constant";
-    import { permissionClient, authorizationClient } from "@/admin/rest/client";
+    import { ResponseStatusEnum, DataStatusEnum } from "@admin/tools/constant";
+    import { roleClient, permissionClient } from "@admin/rest/client";
+
+    import { Dates, HashSet } from "@core";
 
     export default {
         extends: MultiFunctionTableComponent,
         components: { MultiFunctionTable },
         data() {
             return {
-                permissionUpdateModal: {
+
+                roleUpdateModal: {
                     isShowModal: false,
                     data: null,
 
@@ -61,16 +69,24 @@
                     description: ""
                 },
 
-                permissionSaveModal: {
+                roleSaveModal: {
                     isShowModal: false,
 
                     name: "",
                     description: "",
 
                     rules: {
-                        name: [ { required: true, message: "请填写权限名" } ],
-                        description: [ { required: true, message: "请填写权限描述" } ],
+                        name: [ { required: true, message: "请填写角色名" } ],
+                        description: [ { required: true, message: "请填写角色描述" } ],
                     }
+                },
+
+                permissionModal: {
+                    isShowModal: false,
+
+                    roleId: "",
+                    permissions: [],
+                    existPermission: []
                 },
 
                 table: {
@@ -94,10 +110,10 @@
                         title: "状态",
                         key: "statusName"
                     }, {
-                        title: "权限名",
+                        title: "角色名",
                         key: "name"
                     }, {
-                        title: "描述",
+                        title: "角色描述",
                         key: "description"
                     }, {
                         title: "操作",
@@ -115,7 +131,7 @@
                                         type: "text",
                                         size: "small"
                                     },
-                                    on: { click: () => this.changePermissionStatus( row, nextStatus ) }
+                                    on: { click: () => this.changeRoleStatus( row, nextStatus ) }
                                 }, DataStatusEnum.DELETE.status === row.status ? "恢复" : "删除" ),
                                 h( "Button", {
                                     props: {
@@ -124,7 +140,7 @@
                                     },
                                     on: {
                                         click: () => {
-                                            let modal = this.permissionUpdateModal;
+                                            let modal = this.roleUpdateModal;
                                             modal.isShowModal = true;
                                             modal.data = row;
 
@@ -134,7 +150,32 @@
                                             modal.description = row.description;
                                         }
                                     }
-                                }, "修改" )
+                                }, "修改" ),
+                                h( "Button", {
+                                    props: {
+                                        type: "text",
+                                        size: "small"
+                                    },
+                                    on: {
+                                        click: async () => {
+                                            let modal = this.permissionModal;
+                                            modal.isShowModal = true;
+                                            modal.roleId = row.id;
+
+                                            let permission = ( await permissionClient.getPermissions() ).body.result,
+                                                existPermission = ( await permissionClient.getSpecificRolePermissions( row.id ) ).body.result;
+
+                                            modal.existPermission = existPermission.map( item => item.id );
+                                            modal.permissions = permission.map( item => {
+                                                return {
+                                                    key: item.id,
+                                                    label: item.name,
+                                                    description: item.description
+                                                };
+                                            } );
+                                        }
+                                    }
+                                }, "修改角色权限" )
                             ] );
                         }
                     } ],
@@ -149,7 +190,7 @@
         },
         methods: {
             beforeUrlUpdate( expressionMetadata ) {
-                return `/index/auth/permission/${expressionMetadata}`;
+                return `/index/auth/role/${expressionMetadata}`;
             },
 
             async query( page, range, condition ) {
@@ -163,12 +204,12 @@
                     id = condition.id,
                     status = condition.status,
 
-                    permission = ( await permissionClient.queryByMultiCondition(
+                    role = ( await roleClient.queryByMultiCondition(
                         createStartTime, createEndingTime, updateStartTime, updateEndingTime,
                         status, id, page - 1, range
                     ) ).body.result;
 
-                let response = ( await permissionClient.countByMultiCondition(
+                let response = ( await roleClient.countByMultiCondition(
                     createStartTime, createEndingTime, updateStartTime,
                     updateEndingTime, status, id
                 ) ).body;
@@ -178,7 +219,7 @@
                     table.total = response.result;
                 }
 
-                table.data = permission.map( item => {
+                table.data = role.map( item => {
                     return {
                         id: item.id,
                         status: item.status,
@@ -192,29 +233,29 @@
                 } );
             },
 
-            async modifyPermission() {
+            async modifyRole() {
                 let modal = this.permissionUpdateModal,
                     row = modal.data;
 
                 if ( StringUtils.isBlank( modal.name ) ) {
-                    this.$Message.warning( { "content": "请输入权限名" } );
+                    this.$Message.warning( { "content": "请输入角色名" } );
                     modal.isShowModal = true;
                     return;
                 }
 
                 if ( StringUtils.isBlank( modal.description ) ) {
-                    this.$Message.warning( { "content": "请输入权限描述" } );
+                    this.$Message.warning( { "content": "请输入角色描述" } );
                     modal.isShowModal = true;
                     return;
                 }
 
                 if ( !DataStatusEnum.contains( modal.status ) ) {
-                    this.$Message.warning( { "content": "请选择权限状态" } );
+                    this.$Message.warning( { "content": "请选择角色状态" } );
                     modal.isShowModal = true;
                     return;
                 }
 
-                let response = ( await permissionClient.updatePermissionDetail( modal.id, modal.name, modal.description, modal.status ) ).body;
+                let response = ( await roleClient.updateRoleDetail( modal.id, modal.name, modal.description, modal.status ) ).body;
                 if ( response.statusCode !== ResponseStatusEnum.SUCCESS.statusCode ) {
                     this.$Message.error( { "content": `更新失败 -> ${response.message}` } );
                     return;
@@ -232,28 +273,28 @@
                 this.$Message.success( { "content": "更新成功" } );
             },
 
-            beforeCreatePermission() {
-                this.permissionSaveModal.isShowModal = true;
+            beforeCreateRole() {
+                this.roleSaveModal.isShowModal = true;
             },
 
-            async savePermissionModal() {
-                let modal = this.permissionSaveModal,
+            async saveRoleModal() {
+                let modal = this.roleSaveModal,
                     description = modal.description,
                     name = modal.name;
 
                 if ( StringUtils.isBlank( name ) ) {
-                    this.$Message.warning( "请输入权限名" );
+                    this.$Message.warning( "请输入角色名" );
                     setTimeout( () => modal.isShowModal = true, 0 );
                     return;
                 }
 
                 if ( StringUtils.isBlank( description ) ) {
-                    this.$Message.warning( "请输入权限描述" );
+                    this.$Message.warning( "请输入角色描述" );
                     setTimeout( () => modal.isShowModal = true, 0 );
                     return;
                 }
 
-                let response = ( await authorizationClient.addPermission( name, description ) ).body;
+                let response = ( await authorizationClient.addRole( name, description ) ).body;
 
                 if ( response.statusCode !== ResponseStatusEnum.SUCCESS.statusCode ) {
                     this.$Message.error( { "content": `创建失败 -> ${response.body.message}` } );
@@ -263,27 +304,43 @@
                     this.refresh( "table" );
                 }
 
-                this.permissionSaveModalCancel();
+                this.roleSaveModalCancel();
             },
 
-            permissionSaveModalCancel() {
-                this.$refs[ "permissionSaveModal" ].resetFields();
+            roleSaveModalCancel() {
+                this.$refs[ "roleSaveModal" ].resetFields();
             },
 
-            async changePermissionStatus( row, status ) {
+            async changeRoleStatus( row, status ) {
                 this.changeStatus( row, status,
-                    () => permissionClient.updatePermissionDetail( row.id, row.name, row.description, status ) );
+                    () => roleClient.updateRoleDetail( row.id, row.name, row.description, status ) );
             },
 
-            removeAllPermission( selected ) {
+            removeAllRole( selected ) {
                 if ( selected.length <= 0 ) {
-                    this.$Message.warning( { content: "请选择要删除的权限" } );
+                    this.$Message.warning( { content: "请选择要删除的角色" } );
                     return;
                 }
 
-                let permissionIds = selected.map( item => item.id );
+                let roleIds = selected.map( item => item.id );
                 this.removeAll( "table", "table", selected,
-                    () => permissionClient.updatePermissionStatus( permissionIds, DataStatusEnum.DELETE.status ) );
+                    () => roleClient.updateRoleStatus( roleIds, DataStatusEnum.DELETE.status ) );
+            },
+
+            onPermissionChange( targetKeys ) {
+                this.permissionModal.existPermission = targetKeys;
+            },
+
+            async modifyRolePermission() {
+                let modal = this.permissionModal,
+                    response = ( await roleClient.grantPermissionsTo( modal.roleId, modal.existPermission ) ).body;
+
+                if ( response.statusCode !== ResponseStatusEnum.SUCCESS.statusCode ) {
+                    this.$Message.error( { "content": `保存失败 -> ${response.message}` } );
+
+                } else {
+                    this.$Message.success( { "content": "保存成功" } );
+                }
             }
         }
     }

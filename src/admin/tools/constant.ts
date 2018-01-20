@@ -1,34 +1,34 @@
 import { HashMap, Map, CoreUtils, IllegalArgumentException, EventEmitter } from "@/core";
 
-export let
+let
     GLOBAL_CACHE: Map<string, any> = new HashMap(),
-    GLOBAL_EVENT_EMITTER = new EventEmitter();
+    GLOBAL_EVENT_EMITTER: EventEmitter = new EventEmitter(),
 
-// root address
-let devAddress = "http://127.0.0.1:8080",
-    produceAddress = "";
+    // root address
+    devAddress = "http://127.0.0.1:8080",
+    produceAddress = "",
 
-export let
+
     // cache key
     VUE_KEY = "vue",
     ROUTER_KEY = "router",
-    MENU_ITEMS = "menuItems",
-
+    MENU_ITEMS = "menu-items",
 
     // login flag
     TOKEN = "token",
-    IS_RE_LOGIN = "isReLogin",
-
+    IS_RE_LOGIN = "is-reLogin",
 
     // event name
     MENU_INITIALIZE = "menu-initialize",
+    GO_TO_MENU = "go-to-menu",
+    UPDATE_MENU = "update-menu",
     FRAME_RECT = "frame-rect",
 
 
     // request address
     REQUEST_ADDRESS = devAddress;
 
-export class Enum<SubEnum> {
+class Enum<SubEnum> {
     private static enums: Map<Function, any[]> = new HashMap();
 
     protected constructor() {
@@ -48,7 +48,7 @@ export class Enum<SubEnum> {
             throw new IllegalArgumentException( `enum '${name}' is not found from ${this.name}` );
         }
 
-        return (<any>this)[ name ];
+        return ( <any>this )[ name ];
     }
 
     static values<SubEnum>(): SubEnum[] {
@@ -56,7 +56,7 @@ export class Enum<SubEnum> {
     }
 }
 
-export class ResponseStatusEnum extends Enum<ResponseStatusEnum> {
+class ResponseStatusEnum extends Enum<ResponseStatusEnum> {
     public static SUCCESS = new ResponseStatusEnum( 200, "请求成功" );
     public static EMPTY_RESULT = new ResponseStatusEnum( 204, "请求成功, 但没有数据" );
     public static BAD_REQUEST = new ResponseStatusEnum( 400, "用户请求错误或请求缺少参数" );
@@ -80,17 +80,21 @@ export class ResponseStatusEnum extends Enum<ResponseStatusEnum> {
             throw new IllegalArgumentException( `Expect number, but got ${typeof statusCode}` );
         }
 
-        for ( let item of this.values<ResponseStatusEnum>() ) {
-            if( item.statusCode === statusCode ) {
+        for ( let item of ResponseStatusEnum.values<ResponseStatusEnum>() ) {
+            if ( item.statusCode === statusCode ) {
                 return item.message;
             }
         }
 
         return defaultMessage;
     }
+
+    public static expect( statusCode: number, ...expectStatusCodes: number[] ): boolean {
+        return expectStatusCodes.some( status => status === statusCode );
+    }
 }
 
-export class DataStatusEnum extends Enum<DataStatusEnum> {
+class DataStatusEnum extends Enum<DataStatusEnum> {
     public static DELETE = new DataStatusEnum( -1, "已逻辑删除" );
     public static NORMAL = new DataStatusEnum( 1, "正常" );
 
@@ -108,12 +112,27 @@ export class DataStatusEnum extends Enum<DataStatusEnum> {
             throw new IllegalArgumentException( `Expect number, but got ${typeof status}` );
         }
 
-        for ( let item of this.values<DataStatusEnum>() ) {
-            if( item.status === status ) {
+        for ( let item of DataStatusEnum.values<DataStatusEnum>() ) {
+            if ( item.status === status ) {
                 return item.name;
             }
         }
 
         return defaultName;
     }
+
+    public static contains( status: number ): boolean {
+        return DataStatusEnum.values<DataStatusEnum>().some( item => item.status === status );
+    }
 }
+
+export {
+    GLOBAL_CACHE, GLOBAL_EVENT_EMITTER,
+
+    devAddress, produceAddress,
+
+    VUE_KEY, ROUTER_KEY, MENU_ITEMS, TOKEN, IS_RE_LOGIN, MENU_INITIALIZE,
+    GO_TO_MENU, UPDATE_MENU, FRAME_RECT, REQUEST_ADDRESS,
+
+    Enum, ResponseStatusEnum, DataStatusEnum
+};

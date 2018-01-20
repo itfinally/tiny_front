@@ -92,10 +92,10 @@
             }
         },
         methods: {
-            login() {
+            async login() {
                 let user = this.loginForm;
 
-                authentication( user.account, user.password, user.validCode, () => {
+                await authentication( user.account, user.password, user.validCode, () => {
                     user.tryTime = 0;
                     user.requireValid = false;
 
@@ -126,6 +126,9 @@
             }
         },
         mounted() {
+            console.log(this.$router);
+            window.t = this;
+
             this.$nextTick( () => particlesJS( "particles-js", ParticleConfig ) );
         }
     }

@@ -1,13 +1,59 @@
-<style>
+<style scoped>
     form > .ivu-form-item {
         margin-bottom: .5rem;
     }
 </style>
+
 <template>
     <Row>
-        <MultifunctionTable ref="table" :columns="table.columns" :data="table.data" :total="table.total"
-                            :statusList="statusList" @on-data-loading="beforeQuery" @on-data-insert="beforeCreateUser"
-                            @on-data-delete="removeAllUser"/>
+        <MultiFunctionTable ref="table" :columns="table.columns" :data="table.data" :total="table.total"
+                            @on-data-loading="beforeQuery" @on-data-insert="beforeCreateUser"
+                            @on-data-delete="removeAllUser">
+
+            <Form :model="table.condition" :label-width="60" inline slot="conditions">
+                <FormItem prop="account" :label-width="40" label="id">
+                    <Input v-model="table.condition.id" type="text" placeholder="id"/>
+                </FormItem>
+                <FormItem prop="account" label="用户名">
+                    <Input v-model="table.condition.nickname" type="text" placeholder="nickname"/>
+                </FormItem>
+                <FormItem label="用户状态">
+                    <Select v-model="table.condition.status" :value="0" style="width: 6rem;">
+                        <Option v-for="item in statusList" :value="item.status" :key="item.name">
+                            {{ item.name }}
+                        </Option>
+                    </Select>
+                </FormItem>
+                <FormItem label="起始日期">
+                    <Row>
+                        <Col span="11">
+                        <DatePicker v-model="table.condition.createStartTime" type="datetime"
+                                    placeholder="起始时间"></DatePicker>
+                        </Col>
+                        <Col span="2" style="text-align: center">
+                        -</Col>
+                        <Col span="11">
+                        <DatePicker v-model="table.condition.createEndingTime" type="datetime"
+                                    placeholder="结束时间"></DatePicker>
+                        </Col>
+                    </Row>
+                </FormItem>
+                <FormItem label="修改日期">
+                    <Row>
+                        <Col span="11">
+                        <DatePicker v-model="table.condition.updateStartTime" type="datetime"
+                                    placeholder="起始时间"></DatePicker>
+                        </Col>
+                        <Col span="2" style="text-align: center">
+                        -</Col>
+                        <Col span="11">
+                        <DatePicker v-model="table.condition.updateEndingTime" type="datetime"
+                                    placeholder="结束时间"></DatePicker>
+                        </Col>
+                    </Row>
+                </FormItem>
+            </Form>
+        </MultiFunctionTable>
 
         <Modal title="修改用户信息" v-model="userUpdateModal.isShowModal"
                @on-ok="modifyUserDetail" @on-cancel="userUpdateModalCancel">
@@ -16,7 +62,7 @@
                     <Input v-model="userUpdateModal.nickname" type="text" placeholder="昵称"/>
                 </FormItem>
                 <FormItem label="用户状态" :label-width="60">
-                    <Select v-model="userUpdateModal.status" :value="0" style="width: 6rem;">
+                    <Select v-model="userUpdateModal.status" style="width: 6rem;">
                         <Option v-for="item in statusList.slice(0,2)" :value="item.status" :key="item.name">
                             {{ item.name }}
                         </Option>
@@ -39,17 +85,26 @@
                 </FormItem>
             </Form>
         </Modal>
+
+        <Modal title="角色分配" v-model="roleModal.isShowModal" @on-ok="modifyUserRole">
+            <Transfer :data="roleModal.roles" :targetKeys="roleModal.existRoles"
+                      :list-style="{ width: '215px' }" :titles="['角色列表', '用户角色']"
+                      @on-change="onRoleChange">
+            </Transfer>
+        </Modal>
     </Row>
 </template>
 <script>
-    import MultifunctionTable from "@admin/component/multifunctionTable.vue";
+    import MultiFunctionTable from "@admin/component/ui/multi_function_table";
+    import MultiFunctionTableComponent from "@admin/component/multi_function_table_component";
 
-    import { CoreUtils, StringUtils, Dates, HashMap } from "@core";
-    import { userDetailClient } from "@admin/rest/client";
+    import { CoreUtils, StringUtils, Dates } from "@core";
+    import { userDetailClient, roleClient } from "@admin/rest/client";
     import { ResponseStatusEnum, DataStatusEnum } from "@admin/tools/constant";
 
     export default {
-        components: { MultifunctionTable },
+        extends: MultiFunctionTableComponent,
+        components: { MultiFunctionTable },
         data() {
             return {
                 userUpdateModal: {
@@ -76,16 +131,13 @@
                     }
                 },
 
-                statusList: [ {
-                    status: 1,
-                    name: "正常"
-                }, {
-                    status: -1,
-                    name: "已删除"
-                }, {
-                    status: 0,
-                    name: "全选"
-                } ],
+                roleModal: {
+                    isShowModal: false,
+
+                    userId: "",
+                    roles: [],
+                    existRoles: []
+                },
 
                 table: {
                     columns: [ {
@@ -150,62 +202,68 @@
                                             modal.nickname = row.nickname;
                                         }
                                     }
-                                }, "修改" )
+                                }, "修改" ),
+                                h( "Button", {
+                                    props: {
+                                        type: "text",
+                                        size: "small"
+                                    },
+                                    on: {
+                                        click: async () => {
+                                            let modal = this.roleModal;
+                                            modal.isShowModal = true;
+                                            modal.userId = row.id;
+
+                                            let roles = ( await roleClient.getRoles() ).body.result,
+                                                existRoles = ( await roleClient.getSpecificUserRoles( row.id ) ).body.result;
+
+                                            modal.existRoles = existRoles.map( item => item.id );
+                                            modal.roles = roles.map( item => {
+                                                return {
+                                                    key: item.id,
+                                                    label: item.name,
+                                                    description: item.description
+                                                };
+                                            } );
+                                        }
+                                    }
+                                }, "修改用户角色" )
                             ] );
                         }
                     } ],
 
                     data: [],
-                    total: 0
+                    total: 0,
+
+                    condition: {
+                        createStartTime: 0,
+                        createEndingTime: 0,
+                        updateStartTime: 0,
+                        updateEndingTime: 0,
+                        nickname: "",
+                        status: 0,
+                        id: "",
+                    }
                 }
             }
         },
         async mounted() {
-            let [ page, range, condition ] = await this.getTableMetaData(),
-                currentRoute = this.$router.history.current;
-
-            if ( CoreUtils.isNone( currentRoute.params.metadata ) ) {
-                this.beforeQuery( page, range, condition );
-                return;
-            }
-
-            let metadata = JSON.parse( currentRoute.params.metadata );
-            if ( typeof metadata !== "object" ) {
-                this.beforeQuery( page, range, condition );
-                return;
-            }
-
-            [ page, range, condition ] = metadata;
-            this.$refs.table.$emit( "table-condition-update-request", page, range, condition );
-            this.beforeQuery( page, range, condition );
+            this.tableInitializer( "table" );
         },
         methods: {
-            getTableMetaData() {
-                let tableComponent = this.$refs.table,
-                    request = new Promise( resolve => tableComponent.$once( "table-condition-response",
-                        ( page, range, condition ) => resolve( [ page, range, condition ] ) ) );
-
-                tableComponent.$emit( "table-condition-request" );
-
-                return request;
+            beforeUrlUpdate( expressionMetadata ) {
+                return `/index/auth/user/${expressionMetadata}`;
             },
-            beforeQuery( page, range, condition ) {
-                let pureCondition = Object.create( null );
-
-                Object.keys( condition ).forEach( key => pureCondition[ key ] =
-                    ( condition[ key ] instanceof Date ? condition[ key ].getTime() : condition[ key ] ) );
-
-                this.$router.replace( `/index/auth/user/${encodeURIComponent( JSON.stringify( [ page, range, pureCondition ] ) )}` );
-                setTimeout( () => this.query( page, range, condition ), 0 );
+            getCondition() {
+                return this.table.condition;
             },
             async query( page, range, condition ) {
-                let
-                    // date component variable is a string type by default,
-                    // but it will change to a number type when you selected.
-                    createStartTime = StringUtils.isBlank( condition.createStartTime ) ? 0 : condition.createStartTime,
-                    createEndingTime = StringUtils.isBlank( condition.createEndingTime ) ? 0 : condition.createEndingTime,
-                    updateStartTime = StringUtils.isBlank( condition.updateStartTime ) ? 0 : condition.updateStartTime,
-                    updateEndingTime = StringUtils.isBlank( condition.updateEndingTime ) ? 0 : condition.updateEndingTime,
+                let table = this.table,
+
+                    createStartTime = this.getMillisFromDatePicker( condition.createStartTime ),
+                    createEndingTime = this.getMillisFromDatePicker( condition.createEndingTime ),
+                    updateStartTime = this.getMillisFromDatePicker( condition.updateStartTime ),
+                    updateEndingTime = this.getMillisFromDatePicker( condition.updateEndingTime ),
 
                     id = condition.id,
                     status = condition.status,
@@ -216,12 +274,17 @@
                         status, nickname, id, page - 1, range
                     ) ).body.result;
 
-                this.table.total = ( await userDetailClient.countByMultiCondition(
+                let response = ( await userDetailClient.countByMultiCondition(
                     createStartTime, createEndingTime, updateStartTime,
                     updateEndingTime, status, nickname, id
-                ) ).body.result;
+                ) ).body;
 
-                this.table.data = users.map( item => {
+                if ( response.statusCode === ResponseStatusEnum.SUCCESS.statusCode ) {
+                    table.isTimeToCount = false;
+                    table.total = response.result;
+                }
+
+                table.data = users.map( item => {
                     return {
                         id: item.id,
                         status: item.status,
@@ -235,34 +298,24 @@
                     };
                 } );
             },
-            async changeUserStatus( row, status ) {
-                let response = await userDetailClient.updateUserDetail( row.id, status, row.nickname );
 
-                if ( response.body.statusCode !== ResponseStatusEnum.SUCCESS.statusCode ) {
-                    this.$Message.warning( { "content": `${status === DataStatusEnum.DELETE.status ? "删除" : "恢复"}失败` } );
+            async modifyUserDetail() {
+                let modal = this.userUpdateModal,
+                    row = modal.data;
+
+                if ( !DataStatusEnum.contains( modal.status ) ) {
+                    this.$Message.warning( { "content": "请选择用户状态" } );
+                    this.userUpdateModal.isShowModal = true;
                     return;
                 }
 
-                row.status = status;
-                row.statusName = DataStatusEnum.getNameByStatus( status );
+                if ( StringUtils.isBlank( modal.nickname ) ) {
+                    this.$Message.warning( { "content": "请输入用户昵称" } );
+                    this.userUpdateModal.isShowModal = true;
+                    return;
+                }
 
-                row.deleteTime = status !== DataStatusEnum.DELETE.status ? "" :
-                    Dates.toLocalDateTimeString( ( Date.now || new Date().getTime )() );
-
-                this.$Message.success( { "content": `${status === DataStatusEnum.DELETE.status ? "删除" : "恢复"}成功` } );
-            },
-
-            userUpdateModalCancel() {
-                let modal = this.userUpdateModal;
-
-                modal.isUpdate = modal.isShowModal = false;
-                modal.data = null;
-            },
-            async modifyUserDetail() {
-                let modal = this.userUpdateModal,
-                    row = modal.data,
-                    response = await userDetailClient.updateUserDetail( modal.id, modal.status, modal.nickname );
-
+                let response = await userDetailClient.updateUserDetail( modal.id, modal.status, modal.nickname );
                 if ( response.body.statusCode !== ResponseStatusEnum.SUCCESS.statusCode ) {
                     this.$Message.error( { "content": `更新失败 -> ${response.body.message}` } );
                     return;
@@ -280,12 +333,14 @@
                 this.userUpdateModalCancel();
             },
 
+            userUpdateModalCancel() {
+                this.userUpdateModal.isShowModal = false;
+            },
+
             beforeCreateUser() {
                 this.userSaveModal.isShowModal = true;
             },
-            userSaveModalCancel() {
-                this.$refs[ "userSaveModal" ].resetFields();
-            },
+
             async saveUserDetail() {
                 let modal = this.userSaveModal,
                     account = modal.account,
@@ -313,11 +368,23 @@
                 let user = CoreUtils.base64Encoder( `${account}:${nickname}:${password}` ),
                     response = await userDetailClient.register( user );
 
-                response.body.statusCode === ResponseStatusEnum.SUCCESS.statusCode
-                    ? this.$Message.success( { "content": "创建成功" } )
-                    : this.$Message.error( { "content": `创建失败 -> ${response.body.message}` } );
+                if ( response.body.statusCode !== ResponseStatusEnum.SUCCESS.statusCode ) {
+                    this.$Message.error( { "content": `创建失败 -> ${response.body.message}` } );
+
+                } else {
+                    this.$Message.success( { "content": "创建成功" } );
+                    this.refresh( "table" );
+                }
 
                 this.userSaveModalCancel();
+            },
+
+            userSaveModalCancel() {
+                this.$refs[ "userSaveModal" ].resetFields();
+            },
+
+            async changeUserStatus( row, status ) {
+                this.changeStatus( row, status, () => userDetailClient.updateUserDetail( row.id, status, row.nickname ) );
             },
 
             async removeAllUser( selected ) {
@@ -326,28 +393,24 @@
                     return;
                 }
 
-                let userIds = selected.map( user => user.id ),
-                    response = await userDetailClient.updateUserStatus( DataStatusEnum.DELETE.status, userIds );
+                this.removeAll( "table", "table", selected, () => userDetailClient
+                    .updateUserStatus( selected.map( user => user.id ), DataStatusEnum.DELETE.status ) );
+            },
 
-                if ( response.body.statusCode !== ResponseStatusEnum.SUCCESS.statusCode ) {
-                    this.$Message.warning( { "content": "删除失败" } );
+
+            onRoleChange( targetKeys ) {
+                this.roleModal.existRoles = targetKeys;
+            },
+
+            async modifyUserRole() {
+                let modal = this.roleModal,
+                    response = ( await userDetailClient.grantRolesTo( modal.userId, modal.existRoles ) ).body;
+
+                if ( response.statusCode !== ResponseStatusEnum.SUCCESS.statusCode ) {
+                    this.$Message.error( { "content": `保存失败 -> ${response.message}` } );
 
                 } else {
-                    let user,
-                        rows = new HashMap();
-
-                    this.$refs.table.table.data.map( user => rows.put( user.id, user ) );
-
-                    // only modify by table data rows
-                    selected.forEach( item => {
-                        user = rows.get( item.id );
-
-                        user.status = DataStatusEnum.DELETE.status;
-                        user.statusName = DataStatusEnum.getNameByStatus( user.status );
-                        user.deleteTime = Dates.toLocalDateTimeString( ( Date.now || new Date().getTime )() )
-                    } );
-
-                    this.$Message.success( { "content": "删除成功" } );
+                    this.$Message.success( { "content": "保存成功" } );
                 }
             }
         }

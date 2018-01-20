@@ -66,7 +66,7 @@ export abstract class AbstractList<T> extends AbstractCollection<T> implements L
     // It make original object cannot be collected by gc even you don't want use, because sub object still effective.
     // That is the reason of create new one as sub list in here.
     public subList( fromIndex: number, toIndex: number ): List<T> {
-        let newList = <List<T>>new (Object.getPrototypeOf( this ).constructor)(),
+        let newList = <List<T>>new ( Object.getPrototypeOf( this ).constructor )(),
             elements = this.toArray().slice( fromIndex, toIndex );
 
         elements.forEach( elem => newList.add( elem ) );
@@ -191,7 +191,7 @@ export class ArrayList<T> extends AbstractList<T> implements List<T> {
 }
 
 export class ArrayDeque<T> extends AbstractCollection<T> implements Deque<T> {
-    private capacity: number = 8;
+    private capacity: number;
     private head: number = 0;
     private tail: number = 0;
 
@@ -200,7 +200,7 @@ export class ArrayDeque<T> extends AbstractCollection<T> implements Deque<T> {
 
     private elements: T[] = [];
 
-    constructor( initCapacity: number = 8, border: boolean = false ) {
+    constructor( initCapacity: number = 16, border: boolean = false ) {
         super();
 
         if ( !CoreUtils.isNumber( initCapacity ) ) {
@@ -217,7 +217,7 @@ export class ArrayDeque<T> extends AbstractCollection<T> implements Deque<T> {
             ? MAX_INTEGER
 
             // force to even number
-            : parseInt( ((initCapacity & 0b1) === 0 ? initCapacity : initCapacity + 1).toFixed( 0 ) );
+            : parseInt( ( ( initCapacity & 0b1 ) === 0 ? initCapacity : initCapacity + 1 ).toFixed( 0 ) );
     }
 
     private doubleCapacity() {
@@ -274,7 +274,7 @@ export class ArrayDeque<T> extends AbstractCollection<T> implements Deque<T> {
             return false;
         }
 
-        this.elements[ this.head = (this.head - 1) & (this.capacity - 1) ] = e;
+        this.elements[ this.head = ( this.head - 1 ) & ( this.capacity - 1 ) ] = e;
 
         if ( this.head === this.tail ) {
             this.border ? this.full = true : this.doubleCapacity();
@@ -293,7 +293,7 @@ export class ArrayDeque<T> extends AbstractCollection<T> implements Deque<T> {
         let tail = this.tail;
 
         this.elements[ tail ] = e;
-        this.tail = tail = (tail + 1) & (this.capacity - 1);
+        this.tail = tail = ( tail + 1 ) & ( this.capacity - 1 );
 
         if ( this.head === tail ) {
             this.border ? this.full = true : this.doubleCapacity();
@@ -312,7 +312,7 @@ export class ArrayDeque<T> extends AbstractCollection<T> implements Deque<T> {
     }
 
     public getLast(): T {
-        let val = this.elements[ (this.tail - 1) & (this.capacity - 1) ];
+        let val = this.elements[ ( this.tail - 1 ) & ( this.capacity - 1 ) ];
         if ( CoreUtils.isNone( val ) ) {
             throw new NoSuchElementException();
         }
@@ -325,7 +325,7 @@ export class ArrayDeque<T> extends AbstractCollection<T> implements Deque<T> {
     }
 
     public peekLast(): T {
-        return this.elements[ (this.tail - 1) & (this.capacity - 1) ];
+        return this.elements[ ( this.tail - 1 ) & ( this.capacity - 1 ) ];
     }
 
     public pollFirst(): T {
@@ -339,13 +339,13 @@ export class ArrayDeque<T> extends AbstractCollection<T> implements Deque<T> {
 
         this.full = false;
         elements[ head ] = <any>null;
-        this.head = (head + 1) & (this.capacity - 1);
+        this.head = ( head + 1 ) & ( this.capacity - 1 );
 
         return elem;
     }
 
     public pollLast(): T {
-        let tail = (this.tail - 1) & (this.capacity - 1),
+        let tail = ( this.tail - 1 ) & ( this.capacity - 1 ),
             elements = this.elements,
             elem = elements[ tail ];
 
@@ -414,7 +414,7 @@ export class ArrayDeque<T> extends AbstractCollection<T> implements Deque<T> {
             return false;
         }
 
-        elements.splice( index, 1, <any>null );
+        this.delete( index );
         return true;
     }
 
@@ -423,11 +423,94 @@ export class ArrayDeque<T> extends AbstractCollection<T> implements Deque<T> {
         this.elements = [];
     }
 
+    private delete( index: number ): boolean {
+        let elements = this.elements,
+            mask = this.capacity - 1,
+            head = this.head,
+            tail = this.tail,
+
+            // steps that has been taken, usual it must be greater than head
+            front = ( index - head ) & mask,
+
+            // the steps that will be executed, usual it must be less than tail
+            back = ( tail - index ) & mask,
+
+            arrayCopy = ( src: T[], srcPos: number, dest: T[], destPos: number, length: number = 0 ): void => {
+                if ( length <= 0 ) {
+                    return;
+                }
+
+                if ( srcPos >= src.length || destPos >= dest.length ) {
+                    throw new IndexOutOfBoundsException();
+                }
+
+                // let copier: T[] = src.slice();
+                if ( src === dest ) {
+
+                    let copier: T[] = [];
+
+                    // set flag, keep same index with src array
+                    copier[ srcPos - 1 ] = <any>null;
+
+                    src = copier.concat( src.slice( srcPos, srcPos + length ) );
+                }
+
+                for ( length -= 1;
+                      srcPos < src.length && destPos < dest.length && length >= 0;
+                      srcPos += 1, destPos += 1 , length -= 1 ) {
+
+                    dest[ destPos ] = src[ srcPos ];
+                }
+            };
+
+        if( front ) {
+
+        }
+
+        if ( front < back ) {
+            if ( head <= index ) {
+                arrayCopy( elements, head, elements, head + 1, front );
+
+            } else {
+                arrayCopy( elements, 0, elements, 1, index );
+                elements[ 0 ] = elements[ mask ];
+                arrayCopy( elements, head, elements, head + 1, mask - head );
+            }
+
+            elements[ head ] = <any>null;
+            this.head = ( index + 1 ) & mask;
+
+            return false;
+        }
+
+        // back >= front
+
+        if ( index < tail ) {
+            arrayCopy( elements, index + 1, elements, index, back );
+            this.tail = tail - 1;
+
+        } else {
+            arrayCopy( elements, index + 1, elements, index, mask - index );
+            elements[ mask ] = elements[ 0 ];
+            arrayCopy( elements, 1, elements, 0, tail );
+
+            this.tail = ( tail - 1 ) & mask;
+        }
+
+        return true;
+    }
+
     public iterator(): ObjectIterator<T> {
-        let index = 0,
-            mod: number,
+        let mod: number,
             that = this,
-            elements = this.elements.slice();
+            mask = this.capacity - 1,
+            elements = this.elements.slice(),
+
+            last: number,
+            head: number = this.head,
+            tail: number = this.tail;
+
+        let avoid = 0;
 
         return new class implements ObjectIterator<T> {
             next(): T {
@@ -435,23 +518,31 @@ export class ArrayDeque<T> extends AbstractCollection<T> implements Deque<T> {
                     return <any>null;
                 }
 
-                let elem = elements[ mod = index ];
-                index += 1;
+                let elem = elements[ head ];
+
+                mod = 1;
+                last = head;
+                head = ( head + 1 ) & mask;
 
                 return elem;
             }
 
-
             hasNext(): boolean {
-                return index < elements.length;
+                return head !== tail && ( ( avoid += 1 ) < 1000 );
             }
 
             remove(): void {
-                if ( !mod || index - 1 !== mod ) {
+                if ( mod !== 1 ) {
                     throw new IllegalStateException();
                 }
 
-                that.elements.splice( index - 1, 1, <any>null );
+                if ( that.delete( last ) ) {
+                    head = ( head - 1 ) & mask;
+                    tail = that.tail;
+                }
+
+                elements = that.elements;
+                mod = -1;
             }
         }
     }
@@ -461,7 +552,7 @@ export class ArrayDeque<T> extends AbstractCollection<T> implements Deque<T> {
     }
 
     public size(): number {
-        return (this.tail - this.head) & (this.capacity - 1);
+        return ( this.tail - this.head ) & ( this.capacity - 1 );
     }
 }
 
@@ -505,7 +596,7 @@ export class LinkedList<T> extends AbstractList<T> implements Deque<T> {
             head = this.head,
             tail = this.tail;
 
-        while ( (head = head.next) !== tail ) {
+        while ( ( head = head.next ) !== tail ) {
             if ( index === cursor ) {
                 return head.val;
             }
@@ -521,7 +612,7 @@ export class LinkedList<T> extends AbstractList<T> implements Deque<T> {
             head = this.head,
             tail = this.tail;
 
-        while ( (tail = tail.prev) !== head ) {
+        while ( ( tail = tail.prev ) !== head ) {
             if ( tail.val === o ) {
                 return index;
             }
@@ -540,7 +631,7 @@ export class LinkedList<T> extends AbstractList<T> implements Deque<T> {
             tail = this.tail,
             node = new LinkedList.Node( element, <any>null, <any>null );
 
-        while ( (head = head.next) !== tail ) {
+        while ( ( head = head.next ) !== tail ) {
             if ( cursor === index ) {
                 break;
             }
@@ -564,7 +655,7 @@ export class LinkedList<T> extends AbstractList<T> implements Deque<T> {
         if ( CoreUtils.isNumber( index ) && !this.checkForRange( <number>index ) ) {
             let cursor = this.size() - 1;
 
-            while ( (tail = tail.prev) !== head ) {
+            while ( ( tail = tail.prev ) !== head ) {
                 if ( cursor === index ) {
                     break;
                 }
@@ -591,7 +682,7 @@ export class LinkedList<T> extends AbstractList<T> implements Deque<T> {
 
     public iterator(): ObjectIterator<T> {
         let that = this,
-            mod: Node<T>,
+            mod: Node<T> = <any>null,
             cursor: Node<T> = this.head,
 
             head = this.head,
@@ -599,8 +690,8 @@ export class LinkedList<T> extends AbstractList<T> implements Deque<T> {
 
         return new class implements ObjectIterator<T> {
             next(): T {
-                if ( (mod = cursor = cursor.next) === tail ) {
-                    return <any>null;
+                if ( ( mod = cursor = cursor.next ) === tail ) {
+                    return ( mod = <any>null );
                 }
 
                 return cursor.val;
@@ -611,13 +702,15 @@ export class LinkedList<T> extends AbstractList<T> implements Deque<T> {
             }
 
             remove(): void {
-                if ( mod !== cursor || mod === head || mod === tail || CoreUtils.isNone( cursor ) ) {
+                if ( null === mod ) {
                     throw new IllegalStateException();
                 }
 
                 let tmp = cursor.prev;
                 that.removeNode( cursor );
                 cursor = tmp;
+
+                mod = <any>null;
             }
         };
     }
@@ -764,7 +857,7 @@ export class LinkedList<T> extends AbstractList<T> implements Deque<T> {
         let head = this.head,
             tail = this.tail;
 
-        while ( (head = head.next) !== tail ) {
+        while ( ( head = head.next ) !== tail ) {
             if ( head.val === o ) {
                 this.removeNode( head );
                 return true;

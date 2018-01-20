@@ -59,7 +59,7 @@ module.exports = {
         } ]
     },
     resolve: {
-        extensions: [ ".ts", ".tsx", ".js" ],
+        extensions: [ ".ts", ".tsx", ".js", ".vue" ],
         alias: {
             "vue": "vue/dist/vue.js",
             "@": path.resolve( __dirname, "src" ),

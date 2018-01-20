@@ -80,7 +80,7 @@ export class CoreUtils {
     }
 
     public static getOrDefault<T>( expect: T, defaultVal: T ): T {
-        return expect ? expect : defaultVal;
+        return !CoreUtils.isNone( expect ) ? expect : defaultVal;
     }
 
     public static hashCode( target: string ): number {
@@ -90,6 +90,7 @@ export class CoreUtils {
             hash = ( ( hash << 5 ) - hash ) + character;
             hash = hash & hash; // Convert to 32bit integer
         }
+
         return hash;
     }
 
@@ -274,7 +275,7 @@ export class Assert {
             throw new NullPointException( message );
         }
 
-        return o
+        return o;
     }
 
     public static isNull( o: any ): boolean {
@@ -326,9 +327,11 @@ interface EventListener {
 export class EventEmitter {
     private events: any;
     private maxListeners: number;
+    private delayList: { [event: string]: any[][] };
     private static EventListener = class implements EventListener {
         fn: Function;
         isOnce: boolean;
+
 
         constructor( fn: Function, isOnce: boolean = false ) {
             this.fn = fn;
@@ -339,6 +342,14 @@ export class EventEmitter {
     constructor( maxListeners: number = 10 ) {
         this.events = Object.create( null );
         this.maxListeners = maxListeners;
+        this.delayList = Object.create( null );
+    }
+
+    private emitDelayEvent( eventName: string ): void {
+        if ( this.delayList && eventName in this.delayList ) {
+            this.delayList[ eventName ].forEach( args => this.emit( eventName, ...args ) );
+            delete this.delayList[ eventName ];
+        }
     }
 
     private addListener( eventName: string, listener: Function, isOnce: boolean, isPrepend: boolean ): this {
@@ -355,6 +366,7 @@ export class EventEmitter {
 
         if ( !( eventName in events ) ) {
             events[ eventName ] = new EventEmitter.EventListener( listener, isOnce );
+            this.emitDelayEvent( eventName );
             return this;
         }
 
@@ -368,12 +380,15 @@ export class EventEmitter {
         }
 
         if ( listeners.length >= maxListeners ) {
-            console.warn();
+            console.warn( "No more listener." );
         }
 
         isPrepend
             ? listeners.unshift( new EventEmitter.EventListener( listener, isOnce ) )
             : listeners.push( new EventEmitter.EventListener( listener, isOnce ) );
+
+        // active event
+        this.emitDelayEvent( eventName );
 
         return this;
     }
@@ -393,7 +408,7 @@ export class EventEmitter {
     }
 
     private executor( listeners: Function | Function[], args: any[] ): void {
-        let tasks: Promise<any> = new Promise( ( resolve, reject ) => resolve() );
+        let tasks: Promise<any> = new Promise( resolve => resolve() );
 
         listeners instanceof Function
             ? tasks.then( this.task( listeners, args ) )
@@ -427,6 +442,19 @@ export class EventEmitter {
         return true;
     }
 
+    public delayEmit( eventName: string, ...args: any[] ): void {
+        if ( eventName in this.events ) {
+            this.emit( eventName, ...args );
+            return;
+        }
+
+        if ( !( eventName in this.delayList ) ) {
+            this.delayList[ eventName ] = [];
+        }
+
+        this.delayList[ eventName ].push( args );
+    }
+
     public eventNames(): string[] {
         return Object.keys( this.events );
     }
@@ -453,7 +481,6 @@ export class EventEmitter {
     public once( eventName: string, listener: Function ): this {
         return this.addListener( eventName, listener, true, false );
     }
-
 
     public prependListener( eventName: string, listener: Function ): this {
         return this.addListener( eventName, listener, false, true );

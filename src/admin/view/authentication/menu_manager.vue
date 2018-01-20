@@ -39,9 +39,12 @@
             <div style="width: 100%; margin: 0 .3rem .5rem; padding: .5rem 0; border-bottom: 1px solid #dddee1;">
                 <Button type="primary" @click="saveMenuItem">保存菜单信息</Button>
             </div>
-            <Form :label-width="50" style="width: 100%;">
+            <Form :label-width="60" style="width: 100%;">
                 <FormItem :model="menu" label="菜单名">
                     <Input type="text" v-model="menu.name" placeholder="菜单名不能为空"/>
+                </FormItem>
+                <FormItem :model="menu" label="菜单路径" v-if="menu.isLeaf">
+                    <Input type="text" v-model="menu.path" placeholder="菜单路径不能为空"/>
                 </FormItem>
             </Form>
             <Transfer :data="menu.availableRole" :targetKeys="menu.targetRole" :list-style="{ width: '200px' }"
@@ -55,6 +58,9 @@
                 <FormItem prop="name" label="菜单名">
                     <Input v-model="modal.name" placeholder="菜单名不能超过八个字..."/>
                 </FormItem>
+                <FormItem prop="name" label="菜单路径" v-if="'false' === modal.isFolder">
+                    <Input v-model="modal.path" placeholder="菜单路径不能为空..."/>
+                </FormItem>
                 <FormItem label="作为目录创建">
                     <RadioGroup v-model="modal.isFolder">
                         <Radio label="true">是</Radio>
@@ -67,18 +73,21 @@
 </template>
 
 <script>
+    import parent from "@admin/component/base_component";
+
     import { CoreUtils, HashMap, HashSet, ArrayDeque } from "@core";
-    import { menuClient, menuRoleClient, authorizationClient } from "@admin/rest/client";
+    import { menuClient, menuRoleClient } from "@admin/rest/client";
     import { DataStatusEnum, ResponseStatusEnum } from "@admin/tools/constant";
-    import { name } from "@/admin/tools/constant";
 
     export default {
+        extends: parent,
         data() {
             return {
                 selected: {
                     item: null,
                     roles: [],
                     name: "",
+                    path: ""
                 },
 
                 modal: {
@@ -86,11 +95,14 @@
                     isRoot: false,
                     show: false,
                     item: null,
-                    name: ""
+                    name: "",
+                    path: ""
                 },
 
                 menu: {
                     name: "",
+                    path: "",
+                    isLeaf: false,
                     targetRole: [],
                     availableRole: []
                 },
@@ -153,6 +165,8 @@
 
             this.translateTo( tree, menuResponse.body.result );
             this.tree.root[ 0 ].children = tree;
+
+            this.url = this.getThisRouterPath();
         },
         methods: {
             translateTo( toMenus, fromMenus ) {
@@ -165,6 +179,7 @@
                         toMenus.push( {
                             id: elem.id,
                             expand: true,
+                            path: elem.path,
                             title: elem.name,
                             isRoot: elem.root,
                             isLeaf: elem.leaf,
@@ -173,14 +188,11 @@
                         continue;
                     }
 
-                    if ( elem.childes.length <= 0 ) {
-                        continue;
-                    }
-
                     let childrens = [];
                     toMenus.push( {
                         id: elem.id,
                         expand: true,
+                        path: elem.path,
                         title: elem.name,
                         isRoot: elem.root,
                         isLeaf: elem.leaf,
@@ -192,32 +204,28 @@
                 }
             },
             itemDescriptionInitialize( data ) {
-                if ( !("selected" in data) ) {
+                if ( !( "selected" in data ) ) {
                     this.$set( data, "selected", false );
                 }
 
-                if ( !("disabled" in data) ) {
+                if ( !( "disabled" in data ) ) {
                     this.$set( data, "disabled", false );
                 }
 
-                if ( !("disableCheckbox" in data) ) {
+                if ( !( "disableCheckbox" in data ) ) {
                     this.$set( data, "disableCheckbox", false );
                 }
 
-                if ( !("checked" in data) ) {
-                    this.$set( data, "checked", false );
-                }
-
-                if ( !("expand" in data) ) {
+                if ( !( "expand" in data ) ) {
                     this.$set( data, "expand", true );
                 }
 
                 // the old always false
-                if ( !("isNew" in data) ) {
+                if ( !( "isNew" in data ) ) {
                     this.$set( data, "isNew", false );
                 }
 
-                if ( !("isRoot" in data) ) {
+                if ( !( "isRoot" in data ) ) {
                     this.$set( data, "isRoot", false );
                 }
             },
@@ -283,7 +291,6 @@
                 if ( data.disabled ) {
                     data.disabled = !data.disabled;
                     data.selected = false;
-                    data.checked = false;
 
                     let parent = root.find( el => el.nodeKey === node.parent ),
                         recover = this.tree.recovers,
@@ -327,6 +334,18 @@
 
                     children.splice( children.indexOf( data ), 1 );
                     this.tree.exists.remove( data.title );
+
+                    // remove from newNodeDetails to avoid to added by server
+                    let iterator = this.tree.newNodeDetails.iterator();
+                    while ( iterator.hasNext() ) {
+                        iterator.next();
+
+                        if ( data.title === node.name ) {
+                            details.remove( node );
+                            break;
+                        }
+                    }
+
                     return;
                 }
 
@@ -336,7 +355,6 @@
                         removes.add( data.id );
 
                         data.disabled = true;
-                        data.checked = false;
                         data.selected = false;
                     };
 
@@ -346,7 +364,7 @@
                     return;
                 }
 
-                (function walk( data, datas = [] ) {
+                ( function walk( data, datas = [] ) {
                     removeNode( data );
 
                     if ( hasChild( data ) ) {
@@ -360,7 +378,7 @@
                     }
 
                     return datas.length > 0 ? walk( datas.shift(), datas ) : undefined;
-                })( data );
+                } )( data );
             },
             async selectNode( root, node, data ) {
                 if ( data.isNew ) {
@@ -374,17 +392,20 @@
                 }
 
                 data.selected = !data.selected;
-                data.checked = !data.checked;
 
                 let selected = this.selected;
                 if ( data === selected.item ) {
                     selected.item = data.selected ? data : null;
 
+                    // if unselected node, done
+                    if ( null === selected.item ) {
+                        return;
+                    }
+
                 } else {
                     let item = selected.item;
                     if ( item !== null ) {
                         item.selected = false;
-                        item.checked = false;
                     }
 
                     selected.item = data;
@@ -393,11 +414,13 @@
                 let availableRoleResponse = menuRoleClient.queryAvailableRole( data.id ),
                     existRolesResponse = menuRoleClient.queryMenuItemRoles( data.id ),
 
-                    availableRole = (await availableRoleResponse).body.result,
-                    existRole = (await existRolesResponse).body.result,
+                    availableRole = ( await availableRoleResponse ).body.result,
+                    existRole = ( await existRolesResponse ).body.result,
                     menu = this.menu;
 
+                menu.isLeaf = data.isLeaf;
                 selected.name = menu.name = data.title;
+                selected.path = menu.path = data.path;
                 selected.roles = existRole.map( role => role.id );      // role id list
 
                 menu.availableRole = availableRole.concat( existRole ).map( role => {
@@ -431,7 +454,7 @@
                     }
                 }
 
-                return selected.name !== menu.name;
+                return selected.name !== menu.name || selected.path !== menu.path;
             },
             onModalOk() {
                 let modal = this.modal,
@@ -450,12 +473,13 @@
 
                 children.push( {
                     isNew: true,
+                    path: modal.path,
                     title: modal.name,
                     isRoot: modal.isRoot,
-                    isLeaf: "true" !== modal.isFolder
+                    isLeaf: modal.isFolder !== "true"
                 } );
 
-                if ( !("children" in data) ) {
+                if ( !( "children" in data ) ) {
                     this.$set( data, "children", children );
                 }
 
@@ -466,6 +490,7 @@
                     isLeaf: modal.isFolder !== "true",
                     isRoot: modal.isRoot,
                     name: modal.name,
+                    path: modal.path,
                     checkCount: 0       // avoid dead loop
                 } );
 
@@ -475,6 +500,7 @@
                 let modal = this.modal;
 
                 modal.name = "";
+                modal.path = "";
                 modal.item = null;
                 modal.show = false;
                 modal.isFolder = "false";
@@ -504,16 +530,19 @@
                         continue;
                     }
 
+                    // only leaf node have menu path
+                    let path = detail.isLeaf ? detail.path : "";
+
                     // add menu item by loop, because user can be create some menu item under new menu item,
-                    // and this item haven't id,
+                    // and this item haven't id
                     if ( detail.isRoot ) {
                         response = await menuClient.addRootMenu( detail.name, detail.isLeaf );
 
                     } else if ( !CoreUtils.isNone( detail.parent.id ) ) {
-                        response = await menuClient.addMenu( detail.parent.id, detail.name, detail.isLeaf );
+                        response = await menuClient.addMenu( detail.parent.id, detail.name, path, detail.isLeaf );
 
                     } else if ( nameMapping.containsKey( detail.parent.name ) ) {
-                        response = await menuClient.addMenu( nameMapping.get( detail.parent.name ), detail.name, detail.isLeaf );
+                        response = await menuClient.addMenu( nameMapping.get( detail.parent.name ), detail.name, path, detail.isLeaf );
 
                     } else if ( detail.checkCount < 3 ) {
                         detail.checkCount += 1;
@@ -524,8 +553,8 @@
                         continue;
                     }
 
-                    if ( response.statusCode === ResponseStatusEnum.SUCCESS.statusCode ) {
-                        nameMapping.put( detail.name, response.result.id );
+                    if ( response.body.statusCode === ResponseStatusEnum.SUCCESS.statusCode ) {
+                        nameMapping.put( detail.name, response.body.result.id );
                     }
                 }
 
@@ -542,7 +571,7 @@
                 this.$Message.info( { content: "菜单已更新" } );
             },
             async saveMenuItem() {
-                if( !this.isModified() ) {
+                if ( !this.isModified() ) {
                     return;
                 }
 
@@ -556,22 +585,39 @@
                     deletes = roles.filter( id => targetRole.indexOf( id ) < 0 );
 
 
-                let theNewsRequest, deletesRequest, renameRequest;
-                theNewsRequest = deletesRequest = renameRequest = Promise.resolve();
+                let theNewsRequest, deletesRequest, updateMenuRequest;
+                theNewsRequest = deletesRequest = updateMenuRequest = null;
 
                 if ( theNews.length > 0 ) {
                     theNewsRequest = await menuRoleClient.addRoleMenu( selected.item.id, theNews );
+
+                    if ( theNewsRequest.body.statusCode !== ResponseStatusEnum.SUCCESS.statusCode ) {
+                        this.$Message.warning( { "content": `菜单权限更新失败 -> ${theNewsRequest.body.message}` } );
+                        return;
+                    }
                 }
 
                 if ( deletes.length > 0 ) {
                     deletesRequest = await menuRoleClient.removeRoleMenu( selected.item.id, deletes );
+
+                    if ( deletesRequest.body.statusCode !== ResponseStatusEnum.SUCCESS.statusCode ) {
+                        this.$Message.warning( { "content": `菜单权限更新失败 -> ${deletesRequest.body.message}` } );
+                        return;
+                    }
                 }
 
-                if ( selected.name !== menu.name ) {
-                    renameRequest = await menuClient.rename( selected.item.id, menu.name );
+                if ( selected.name !== menu.name || selected.path !== menu.path ) {
+                    updateMenuRequest = await menuClient.updateMenu( selected.item.id, menu.name, menu.path );
+
+                    if ( updateMenuRequest.body.statusCode !== ResponseStatusEnum.SUCCESS.statusCode ) {
+                        this.$Message.warning( { "content": `菜单信息更新失败 -> ${updateMenuRequest.body.message}` } );
+                        return;
+                    }
                 }
 
-                selected.name = menu.name;
+                selected.item.name = selected.name = menu.name;
+                selected.item.path = selected.path = menu.path;
+
                 selected.roles = targetRole;
 
                 this.$Message.info( { content: "已更新菜单信息" } );

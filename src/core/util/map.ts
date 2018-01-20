@@ -10,7 +10,7 @@ export interface Entry<K, V> {
 }
 
 function isMap( m: any ): void {
-    if ( !(m instanceof AbstractMap) ) {
+    if ( !( m instanceof AbstractMap ) ) {
         throw new TypeError( `Expect type Map, but got ${typeof m}` );
     }
 }
@@ -260,18 +260,19 @@ export class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
     private capacity: number;
     private length: number;
 
-    constructor( initCapacity: number = 16, loadFactor: number = .75 ) {
+    public constructor( initCapacity: number = 16, loadFactor: number = .75 ) {
         super();
 
         this.length = 0;
-        this.capacity = initCapacity;
         this.loadFactor = loadFactor;
+        this.capacity = 16 === initCapacity ? initCapacity : this.calculateSize( initCapacity );
+
         this.threshold = initCapacity * loadFactor;
     }
 
     private static hash( key: any ): number {
         let h;
-        return CoreUtils.isNone( key ) ? 0 : (h = key.hashCode) & (h >>> 16);
+        return CoreUtils.isNone( key ) ? 0 : ( h = key.hashCode ) & ( h >>> 16 );
     }
 
     private resize(): void {
@@ -296,7 +297,7 @@ export class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
             elem = oldCapacity[ index ];
 
             while ( !CoreUtils.isNone( elem ) ) {
-                cursor = elem.hash & (capacity - 1);
+                cursor = elem.hash & ( capacity - 1 );
 
                 if ( !newCapacity[ cursor ] ) {
                     newCapacity[ cursor ] = new HashMap.Entry( elem.key, elem.value, elem.hash, <any>null );
@@ -321,14 +322,15 @@ export class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
 
     private calculateSize( addSize: number ): number {
         let size = 2,
-            requireCap = Math.min( (this.length + addSize) / this.loadFactor, MAX_INTEGER );
+            requireCap = Math.min( ( this.length + addSize ) / this.loadFactor, MAX_INTEGER );
 
         // use '>>>' to remove sign flag
         while ( size < requireCap ) {
-            size = (size <<= 1) >>> 0;
+            size = ( size <<= 1 ) >>> 0;
         }
 
-        return size;
+        // cannot less than sixteen
+        return size < 16 ? 16 : size;
     }
 
     private getIterator(): ObjectIterator<Entry<K, V>> {
@@ -380,7 +382,7 @@ export class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
                 let head,
                     prevIndex = index - 1;
 
-                while ( (head = elements[ prevIndex ]) === null ) {
+                while ( ( head = elements[ prevIndex ] ) === null ) {
                     prevIndex -= 1;
                 }
 
@@ -454,16 +456,16 @@ export class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
     public put( key: K, value: V ): V {
         let elements = this.elements,
             hash = HashMap.hash( key ),
-            node = elements[ hash & (this.capacity - 1) ];
+            node = elements[ hash & ( this.capacity - 1 ) ];
 
         if ( CoreUtils.isNone( node ) ) {
-            elements[ hash & (this.capacity - 1) ] = new HashMap.Entry( key, value, hash, <any>null );
+            elements[ hash & ( this.capacity - 1 ) ] = new HashMap.Entry( key, value, hash, <any>null );
 
         } else {
             let last: Entry<K, V> = node;
 
             while ( node !== null ) {
-                if ( node.hash === hash && (key === node.key || CoreUtils.eq( key, node.key )) ) {
+                if ( node.hash === hash && ( key === node.key || CoreUtils.eq( key, node.key ) ) ) {
                     let oldVal = node.value;
                     node.value = value;
 
@@ -499,7 +501,7 @@ export class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
     public remove( key: any ): V {
         let elements = this.elements,
             hash = HashMap.hash( key ),
-            index = hash & (this.capacity - 1),
+            index = hash & ( this.capacity - 1 ),
 
             node = elements[ index ];
 
@@ -542,10 +544,10 @@ export class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
 
     public containsKey( key: any ): boolean {
         let hash = HashMap.hash( key ),
-            node = this.elements[ hash & (this.capacity - 1) ];
+            node = this.elements[ hash & ( this.capacity - 1 ) ];
 
         while ( !CoreUtils.isNone( node ) ) {
-            if ( node.hash === hash && (key === node.key || CoreUtils.eq( key, node.key )) ) {
+            if ( node.hash === hash && ( key === node.key || CoreUtils.eq( key, node.key ) ) ) {
                 return true;
             }
 
@@ -585,7 +587,7 @@ export class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
 
     public get( key: any ): V {
         let hash = HashMap.hash( key ),
-            node = this.elements[ hash & (this.capacity - 1) ];
+            node = this.elements[ hash & ( this.capacity - 1 ) ];
 
         while ( !CoreUtils.isNone( node ) ) {
             if ( node.hash === hash && ( key === node.key || CoreUtils.eq( key, node.key ) ) ) {

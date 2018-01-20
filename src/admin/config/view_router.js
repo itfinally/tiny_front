@@ -7,7 +7,8 @@ let login = ( r => require.ensure( [], () => r( require( "@admin/view/index/logi
     // authentication
     menuManager = ( r => require.ensure( [], () => r( require( "@admin/view/authentication/menu_manager.vue" ) ), "authentication" ) ),
     permission = ( r => require.ensure( [], () => r( require( "@admin/view/authentication/permission.vue" ) ), "authentication" ) ),
-    user = ( r => require.ensure( [], () => r( require( "@admin/view/authentication/user.vue" ) ), "authentication" ) );
+    user = ( r => require.ensure( [], () => r( require( "@admin/view/authentication/user.vue" ) ), "authentication" ) ),
+    role = ( r => require.ensure( [], () => r( require( "@admin/view/authentication/role.vue" ) ), "authentication" ) );
 
 function prefixWith( prefix, routers ) {
     routers.forEach( router => router.path = `${prefix}/${router.path}`.replace( /\/{2,}/g, "/" ) );
@@ -18,7 +19,7 @@ export default [ {
     "path": "/",
     "redirect": "/login"
 }, {
-    "path": "/login",
+    "path": "/login/:test?",
     "component": login
 }, {
     "path": "/test",
@@ -28,7 +29,7 @@ export default [ {
     "component": index,
     "children": [
         ...prefixWith( "auth", [ {
-            "path": "permission/:params?",
+            "path": "permission/:metadata?",
             "component": permission
         }, {
             "path": "menu_manager",
@@ -36,6 +37,9 @@ export default [ {
         }, {
             "path": "user/:metadata?",
             "component": user
+        }, {
+            "path": "role/:metadata?",
+            "component": role
         } ] )
     ]
 } ];

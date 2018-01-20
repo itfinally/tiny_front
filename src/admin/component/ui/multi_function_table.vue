@@ -1,49 +1,54 @@
+<style scoped>
+    form > .ivu-form-item {
+        margin-bottom: .5rem;
+    }
+</style>
+
 <template>
     <Row>
-        <slot name="searchTools">
+        <slot name="tableToolPanel">
             <Row type="flex" style="flex-direction: column; margin: .5rem 0; width: auto; max-height: 8rem;">
-                <Form :model="table.condition" :label-width="60" inline>
-                    <FormItem prop="account" :label-width="40" label="id">
-                        <Input v-model="table.condition.id" type="text" placeholder="id"/>
-                    </FormItem>
-                    <FormItem prop="nickname" label="用户名">
-                        <Input v-model="table.condition.nickname" type="text" placeholder="用户名"/>
-                    </FormItem>
-                    <FormItem label="用户状态">
-                        <Select v-model="table.condition.status" :value="0" style="width: 6rem;">
-                            <Option v-for="item in statusList" :value="item.status" :key="item.name">{{ item.name }}
-                            </Option>
-                        </Select>
-                    </FormItem>
-                    <FormItem label="起始日期">
-                        <Row>
-                            <Col span="11">
-                            <DatePicker v-model="table.condition.createStartTime" type="datetime"
-                                        placeholder="起始时间"></DatePicker>
-                            </Col>
-                            <Col span="2" style="text-align: center">
-                            -</Col>
-                            <Col span="11">
-                            <DatePicker v-model="table.condition.createEndingTime" type="datetime"
-                                        placeholder="结束时间"></DatePicker>
-                            </Col>
-                        </Row>
-                    </FormItem>
-                    <FormItem label="修改日期">
-                        <Row>
-                            <Col span="11">
-                            <DatePicker v-model="table.condition.updateStartTime" type="datetime"
-                                        placeholder="起始时间"></DatePicker>
-                            </Col>
-                            <Col span="2" style="text-align: center">
-                            -</Col>
-                            <Col span="11">
-                            <DatePicker v-model="table.condition.updateEndingTime" type="datetime"
-                                        placeholder="结束时间"></DatePicker>
-                            </Col>
-                        </Row>
-                    </FormItem>
-                </Form>
+                <slot name="conditions">
+                    <Form :model="table.condition" :label-width="60" inline>
+                        <FormItem prop="account" :label-width="40" label="id">
+                            <Input v-model="table.condition.id" type="text" placeholder="id"/>
+                        </FormItem>
+                        <FormItem label="状态">
+                            <Select v-model="table.condition.status" :value="0" style="width: 6rem;">
+                                <Option v-for="item in statusList" :value="item.status" :key="item.name">{{ item.name }}
+                                </Option>
+                            </Select>
+                        </FormItem>
+                        <FormItem label="起始日期">
+                            <Row>
+                                <Col span="11">
+                                <DatePicker v-model="table.condition.createStartTime" type="datetime"
+                                            placeholder="起始时间"></DatePicker>
+                                </Col>
+                                <Col span="2" style="text-align: center">
+                                -</Col>
+                                <Col span="11">
+                                <DatePicker v-model="table.condition.createEndingTime" type="datetime"
+                                            placeholder="结束时间"></DatePicker>
+                                </Col>
+                            </Row>
+                        </FormItem>
+                        <FormItem label="修改日期">
+                            <Row>
+                                <Col span="11">
+                                <DatePicker v-model="table.condition.updateStartTime" type="datetime"
+                                            placeholder="起始时间"></DatePicker>
+                                </Col>
+                                <Col span="2" style="text-align: center">
+                                -</Col>
+                                <Col span="11">
+                                <DatePicker v-model="table.condition.updateEndingTime" type="datetime"
+                                            placeholder="结束时间"></DatePicker>
+                                </Col>
+                            </Row>
+                        </FormItem>
+                    </Form>
+                </slot>
                 <Form inline>
                     <FormItem :label-width="0">
                         <Button @click="insertOrUpdate('on-data-insert')">新建</Button>
@@ -74,10 +79,9 @@
 
 <script>
     import { GLOBAL_EVENT_EMITTER, FRAME_RECT } from "@admin/tools/constant";
-    import { CoreUtils } from "@core";
 
     export default {
-        name: "MultifunctionTable",
+        name: "MultiFunctionTable",
         props: {
             columns: {
                 type: Array,
@@ -86,10 +90,6 @@
             data: {
                 type: Array,
                 required: true
-            },
-
-            condition: {
-                type: Object
             },
 
             total: {
@@ -151,7 +151,7 @@
                 }
 
                 let asyncRender = new Promise( resolve => resolve() );
-                buffer.forEach( item => asyncRender.then( () => Promise.resolve( data.push( item ) ) ) );
+                buffer.forEach( item => asyncRender = asyncRender.then( () => Promise.resolve( data.push( item ) ) ) );
             }
         },
         data() {
@@ -176,9 +176,8 @@
                         createEndingTime: "",
                         updateStartTime: "",
                         updateEndingTime: "",
-                        nickname: "",
+                        status: 0,
                         id: "",
-                        status: 0
                     }
                 }
             };
@@ -199,15 +198,7 @@
             this.$on( "table-condition-request", () => this.$emit(
                 "table-condition-response", table.cursor, table.scrollRange, table.condition ) );
 
-            this.$on( "table-condition-update-request", ( page, range, condition ) => {
-                table.cursor = page;
-                table.scrollRange = range;
-                table.condition = condition;
-            } );
-
-            this.$on( "table-data-refresh", () => this.refreshTableData() );
-
-            this.$emit( "on-data-count-loading", this.table.condition );
+            this.$emit( "on-data-count-loading", table.condition );
         },
         destroyed() {
             GLOBAL_EVENT_EMITTER.removeListener( FRAME_RECT, this.tableAdapter );
@@ -225,13 +216,6 @@
 
                 table.scrollRange = pageSize;
                 this.$emit( "on-data-loading", table.cursor, pageSize, table.condition );
-            },
-            refreshTableData() {
-                let data = this.table.data = [],
-                    buffer = this.table.buffer,
-                    asyncRender = new Promise( resolve => resolve() );
-
-                buffer.forEach( item => asyncRender.then( () => Promise.resolve( data.push( item ) ) ) );
             },
             selectedTableData( selection ) {
                 this.table.selected = selection;
