@@ -5,7 +5,7 @@ npm-debug
 node_modules
 
 test
+dist
 *.js.map
 src/**/*.js
-!src/retrofitjs/declare/proxy.js
-!src/admin/config/view_router.js
+package-lock.json

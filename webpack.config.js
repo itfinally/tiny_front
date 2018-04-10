@@ -6,14 +6,14 @@ const
 
 
 module.exports = {
-  entry: "./index.js",
+  entry: "./src/index.js",
   devtool: "inline-source-map",
   output: {
     path: path.resolve( __dirname, "dist" ),
     filename: "[name].js"
   },
   devServer: {
-    public: "127.0.0.1",
+    public: "192.168.199.159",
     disableHostCheck: true,
     host: "0.0.0.0",
     compress: true,
@@ -62,13 +62,13 @@ module.exports = {
     extensions: [ ".ts", ".tsx", ".js", ".vue" ],
     alias: {
       "vue": "vue/dist/vue.js",
-      "@": path.resolve( __dirname, "src" ),
+      "@": path.resolve( __dirname, "src" )
     }
   },
   plugins: [
     new webpack.HotModuleReplacementPlugin(),
     new HtmlWebpackPlugin( {
-      template: path.resolve( __dirname, "./src/index.html" )
+      template: path.resolve( __dirname, "./src/tiny.html" )
     } ),
     new ExtractTextWebpackPlugin( {
       filename: "css/[name].[id].css",

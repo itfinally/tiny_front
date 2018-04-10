@@ -2,6 +2,7 @@
   "compilerOptions": {
     "strict": true,
     "allowJs": true,
+    "baseUrl": "./src",
     "target": "es2016",
     "module": "commonjs",
     "sourceRoot": "./src",
@@ -9,20 +10,8 @@
     "inlineSourceMap": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "baseUrl": "./",
     "paths": {
-      "@/*": [
-        "src/*"
-      ],
-      "@core/*": [
-        "src/core/*"
-      ],
-      "@admin/*": [
-        "src/admin/*"
-      ],
-      "@retrofitjs/*": [
-        "src/retrofitjs/*"
-      ]
+      "@/*": ["./*"]
     }
   },
   "exclude": [
