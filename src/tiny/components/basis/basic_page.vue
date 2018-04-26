@@ -35,8 +35,8 @@
           minutes = specifiedTime.getMinutes(),
           seconds = specifiedTime.getSeconds(),
 
-          date = `${year}/${mouth < 9 ? "0" + mouth : mouth}/${day < 9 ? "0" + day : day}`,
-          time = `${hour < 9 ? "0" + hour : hour}:${minutes < 9 ? "0" + minutes : minutes}:${seconds < 9 ? "0" + seconds : seconds}`;
+          date = `${year}/${mouth < 10 ? "0" + mouth : mouth}/${day < 10 ? "0" + day : day}`,
+          time = `${hour < 10 ? "0" + hour : hour}:${minutes < 10 ? "0" + minutes : minutes}:${seconds < 10 ? "0" + seconds : seconds}`;
 
         return `${date} ${time}`;
       },
