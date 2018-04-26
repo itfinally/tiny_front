@@ -1,10 +1,12 @@
-let login = ( resolve: Function ) => require.ensure( [], require => resolve( require( "@/tiny/view/main/login.vue" ) ), "entrance" ),
-  console = ( resolve: Function ) => require.ensure( [], require => resolve( require( "@/tiny/view/main/console.vue" ) ), "entrance" ),
+let errCallback = ( err: any ) => window.console.log( `Loading chunk failed, err => ${err}` );
 
-  permission = ( resolve: Function ) => require.ensure( [], require => resolve( require( "@/tiny/view/authentication/permission.vue" ) ), "authentication" ),
-  role = ( resolve: Function ) => require.ensure( [], require => resolve( require( "@/tiny/view/authentication/role.vue" ) ), "authentication" ),
-  department = ( resolve: Function ) => require.ensure( [], require => resolve( require( "@/tiny/view/authentication/department.vue" ) ), "authentication" ),
-  menu = ( resolve: Function ) => require.ensure( [], require => resolve( require( "@/tiny/view/authentication/menu.vue" ) ), "authentication" );
+let login = ( resolve: Function ) => require.ensure( [], require => resolve( require( "@/tiny/view/main/login.vue" ) ), errCallback, "entrance" ),
+  console = ( resolve: Function ) => require.ensure( [], require => resolve( require( "@/tiny/view/main/console.vue" ) ), errCallback, "entrance" ),
+
+  permission = ( resolve: Function ) => require.ensure( [], require => resolve( require( "@/tiny/view/authentication/permission.vue" ) ), errCallback, "authentication" ),
+  role = ( resolve: Function ) => require.ensure( [], require => resolve( require( "@/tiny/view/authentication/role.vue" ) ), errCallback, "authentication" ),
+  department = ( resolve: Function ) => require.ensure( [], require => resolve( require( "@/tiny/view/authentication/department.vue" ) ), errCallback, "authentication" ),
+  menu = ( resolve: Function ) => require.ensure( [], require => resolve( require( "@/tiny/view/authentication/menu.vue" ) ), errCallback, "authentication" );
 
 function prefixWith( prefix: string, routers: any[] ) {
   routers.forEach( router => router.path = `${prefix}/${router.path}`.replace( /\/{2,}/g, "/" ) );
