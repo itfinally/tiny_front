@@ -4,9 +4,9 @@
       <Panel name="condition" style="font-size: .8rem;">
         工具栏
         <QueryForm ref="queryForm" slot="content" @on-query="queryFromForm">
-          <Button type="primary" slot="btn" @click="addPermission">新增角色</Button>
-          <Button type="primary" slot="btn" @click="removeAll">删除选定数据</Button>
-          <Button type="primary" slot="btn" @click="recoverAll">恢复选定数据</Button>
+          <Button v-if="security.roleWrite" type="primary" slot="btn" @click="addRole">新增角色</Button>
+          <Button v-if="security.roleWrite" type="primary" slot="btn" @click="removeAll">删除选定数据</Button>
+          <Button v-if="security.roleWrite" type="primary" slot="btn" @click="recoverAll">恢复选定数据</Button>
         </QueryForm>
       </Panel>
     </Collapse>
@@ -51,7 +51,7 @@
 
   import { CLOSE_MASK, GLOBAL_EVENT_EMITTER, OPEN_MASK } from "@/tiny/support/commons";
   import { EntityStatus, ResponseStatus } from "@/tiny/support/status";
-  import { roleClient, permissionClient } from "@/tiny/web/client";
+  import { permissionClient, roleClient } from "@/tiny/web/client";
 
   export default {
     extends: BasicTablePage,
@@ -92,8 +92,11 @@
                   btnName = ""
               }
 
-              let btns = [
-                h( "Button", {
+              let btns = [],
+                security = this.security;
+
+              if ( security.roleWrite ) {
+                btns.push( h( "Button", {
                   props: {
                     type: "text",
                     size: "small"
@@ -113,10 +116,10 @@
                       modal.open = true;
                     }
                   }
-                }, "编辑" )
-              ];
+                }, "编辑" ) );
+              }
 
-              if ( btnName ) {
+              if ( security.roleWrite && btnName ) {
                 btns.push( h( "Button", {
                   props: {
                     type: "text",
@@ -128,7 +131,7 @@
                 }, btnName ) );
               }
 
-              if ( row.name.toLowerCase() !== "admin" ) {
+              if ( this.hasPermission( "grant" ) && row.name.toLowerCase() !== "admin" ) {
                 btns.push( h( "Button", {
                   props: {
                     type: "text",
@@ -166,7 +169,7 @@
                         GLOBAL_EVENT_EMITTER.emit( CLOSE_MASK );
                         return;
 
-                      } catch ( exp ) {
+                      } catch ( ignore ) {
                       }
 
                       GLOBAL_EVENT_EMITTER.emit( CLOSE_MASK );
@@ -204,10 +207,19 @@
           used: [],
 
           open: false
+        },
+
+        security: {
+          roleRead: false,
+          roleWrite: false
         }
       };
     },
     async mounted() {
+      let security = this.security;
+      security.roleRead = await this.hasPermission( "role_read" );
+      security.roleWrite = await this.hasPermission( "role_write" );
+
       let paging = this.$refs[ "paging" ],
         queryForm = this.$refs[ "queryForm" ],
         params = this.$router.history.current.params;
@@ -228,6 +240,10 @@
         this.query( this.$refs[ "queryForm" ].getConditions(), pageData );
       },
       async query( conditions, pageData ) {
+        if ( !( await this.hasPermission( "role_read", true ) ) ) {
+          return;
+        }
+
         this.tables.total = ( await roleClient.countByConditionsIs( conditions ) ).data.result;
         this.tables.data = ( await roleClient.queryByConditionsIs(
           Object.assign( Object.create( null ), conditions, pageData ) ) ).data.result.map( item => {
@@ -247,9 +263,13 @@
         this.updatePath( conditions, pageData );
       },
       async updateRowStatus( row ) {
+        if ( !( await this.hasPermission( "role_write", true ) ) ) {
+          return;
+        }
+
         switch ( row._status ) {
           case EntityStatus.NORMAL.status:
-            this.removeOrRecoverRow( row, () => roleClient.removeByIdIs( row.id ) );
+            this.removeOrRecoverRow( row, () => roleClient.removeRole( row.id ) );
             break;
 
           case EntityStatus.DELETE.status:
@@ -261,7 +281,11 @@
             this.$Message.error( { content: "更新失败, 当前数据状态异常" } );
         }
       },
-      addPermission() {
+      async addRole() {
+        if ( !( await this.hasPermission( "role_write", true ) ) ) {
+          return;
+        }
+
         let modal = this.modal;
 
         modal.name = "";
@@ -274,14 +298,26 @@
         modal.open = true;
       },
       async removeAll() {
+        if ( !( await this.hasPermission( "role_write", true ) ) ) {
+          return;
+        }
+
         let rows = this.$refs[ "dataTable" ].getAllSelected();
         this.removeAllRow( rows, () => roleClient.removeAllByIdIn( rows.map( item => item.id ) ) );
       },
       async recoverAll() {
+        if ( !( await this.hasPermission( "role_write", true ) ) ) {
+          return;
+        }
+
         let rows = this.$refs[ "dataTable" ].getAllSelected();
         this.recoverAllRow( rows, () => roleClient.recoverAllByIdIn( rows.map( item => item.id ) ) );
       },
       async updateData() {
+        if ( !( await this.hasPermission( "role_write", true ) ) ) {
+          return;
+        }
+
         GLOBAL_EVENT_EMITTER.emit( OPEN_MASK );
 
         let modal = this.modal;
@@ -326,6 +362,10 @@
         this.$Message.error( { content: "更新失败" } );
       },
       async saveData() {
+        if ( !( await this.hasPermission( "role_write", true ) ) ) {
+          return;
+        }
+
         GLOBAL_EVENT_EMITTER.emit( OPEN_MASK );
 
         let modal = this.modal;
@@ -366,6 +406,10 @@
         this.$Message.error( { content: "更新失败" } );
       },
       async updateRolePermission( added, removed ) {
+        if ( !( await this.hasPermission( "grant", true ) ) ) {
+          return;
+        }
+
         GLOBAL_EVENT_EMITTER.emit( OPEN_MASK );
 
         let requests = [], modal = this.permissionModal;
@@ -399,7 +443,7 @@
           GLOBAL_EVENT_EMITTER.emit( CLOSE_MASK );
           return;
 
-        } catch ( exp ) {
+        } catch ( ignore ) {
         }
 
         GLOBAL_EVENT_EMITTER.emit( CLOSE_MASK );

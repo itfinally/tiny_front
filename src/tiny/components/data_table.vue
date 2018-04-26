@@ -83,8 +83,6 @@
         return columns;
       }
     },
-    mounted() {
-    },
     methods: {
       selectChange( rows ) {
         this.tables.rows = rows;

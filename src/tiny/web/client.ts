@@ -11,11 +11,7 @@ class BasicClient {
   public countByConditionsIs( @Body conditions: any ): SingleResponse<Number> {
   }
 
-  @DELETE( "/remove_by_id_is/:id" )
-  public removeByIdIs( @Path( "id" ) id: String ): BasicResponse {
-  }
-
-  @POST( "/record_by_id_is/:id" )
+  @POST( "/recover_by_id_is/:id" )
   public recoverByIdIs( @Path( "id" ) id: String ): BasicResponse {
   }
 
@@ -23,7 +19,7 @@ class BasicClient {
   public removeAllByIdIn( @Body ids: Array<String> ): BasicResponse {
   }
 
-  @POST( "/record_all_by_id_in" )
+  @POST( "/recover_all_by_id_in" )
   public recoverAllByIdIn( @Body ids: Array<String> ): BasicResponse {
   }
 }
@@ -83,6 +79,10 @@ class PermissionClient extends BasicClient {
   public save( @Field( "name" ) name: String, @Field( "description" ) description: String, @Field( "status" ) status: Number ): BasicResponse {
   }
 
+  @DELETE( "/remove_permission/:permissionId" )
+  public removePermission( @Path( "permissionId" ) permissionId: String ): BasicResponse {
+  }
+
   @GET( "/query_own_permissions" )
   public queryOwnPermissions(): ListResponse<PermissionEntity> {
   }
@@ -100,6 +100,10 @@ class RoleClient extends BasicClient {
   @POST( "/add_role" )
   public save( @Field( "name" ) name: String, @Field( "description" ) description: String,
                @Field( "status" ) status: Number, @Field( "priority" ) priority: Number ): BasicResponse {
+  }
+
+  @DELETE( "/remove_role/:roleId" )
+  public removeRole( @Path( "roleId" ) roleId: String ): BasicResponse {
   }
 
   @GET( "/query_permissions_by_role_id_is/:roleId" )
@@ -121,6 +125,10 @@ class RoleClient extends BasicClient {
   @GET( "/query_roles_by_menu_id_is/:menuId" )
   public queryRolesByMenuIdIs( @Path( "menuId" ) menuId: String ): ListResponse<RoleEntity> {
   }
+
+  @GET( "/query_own_roles" )
+  public queryOwnRoles(): ListResponse<RoleEntity> {
+  }
 }
 
 @HTTP( "/department" )
@@ -134,6 +142,10 @@ class DepartmentClient extends BasicClient {
   @FormUrlEncoded
   @POST( "/add_department" )
   public save( @Field( "name" ) name: String, @Field( "description" ) description: String, @Field( "status" ) status: Number ): BasicResponse {
+  }
+
+  @DELETE( "/remove_department/:departmentId" )
+  public removeDepartment( @Path( "departmentId" ) departmentId: String ): BasicResponse {
   }
 
   @POST( "/add_roles_to_department/:departmentId" )

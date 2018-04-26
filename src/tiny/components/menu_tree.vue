@@ -23,6 +23,10 @@
         type: Array,
         required: true
       },
+      disabled: {
+        type: Boolean,
+        default: false
+      },
       isModified: {
         type: Function,
         default() {
@@ -50,7 +54,7 @@
                     style: {
                       display: "inline-block",
                       marginRight: "2rem",
-                      float: "right",
+                      float: "right"
                     }
                   }, [
                     // 这是增加根目录文件/文件夹的按钮
@@ -60,6 +64,7 @@
                         type: "primary"
                       },
                       style: {
+                        visibility: this.disabled ? "hidden" : "visible",
                         marginRight: "0",
                         width: "4rem"
                       },
@@ -162,28 +167,27 @@
               display: "inline-block",
               marginRight: "2rem",
               float: "right",
+              visibility: this.disabled
             }
           }, [
             // 这是新增/恢复按钮
             h( "Button", {
               props: { icon: "ios-plus-empty" },
               style: {
+                visibility: this.disabled ? "hidden" : "visible",
                 marginRight: "1rem",
               },
 
               attrs: { disabled: !data.disabled && data.leaf },
-              on: {
-                click: () => this.beforeAppendMenu( data, node, root, false )
-              }
+              on: { click: () => this.beforeAppendMenu( data, node, root, false ) }
             } ),
 
             // 这是删除按钮
             h( "Button", {
               props: { icon: "ios-minus-empty" },
               attrs: { disabled: data.disabled },
-              on: {
-                click: () => this.removeMenu( data, node, root )
-              }
+              style: { visibility: this.disabled ? "hidden" : "visible" },
+              on: { click: () => this.removeMenu( data, node, root ) }
             } )
           ] ),
 
@@ -206,9 +210,7 @@
                 color: `${data.disabled && data.new
                   ? "blue" : data.disabled ? "red" : data.new ? "green" : ""}`
               },
-              on: {
-                click: () => this.selectMenu( data, node, root )
-              }
+              on: { click: () => this.selectMenu( data, node, root ) }
             }, data.name )
           ] )
         ] );

@@ -22,11 +22,12 @@
       <h2>{{ mask.message }}</h2>
     </Row>
 
-    <Sider ref="sidebar" :width="sidebar.width" collapsible hide-trigger :collapsed-width="0" style="overflow: scroll;">
+    <Sider ref="sidebar" v-model="sidebar.isClosed" :width="sidebar.width" collapsible hide-trigger
+           :collapsed-width="0" style="overflow: scroll;">
       <Row v-if="menuMembers.length <= 0" style="text-align: center; color: white;">
         <h3 style="margin-top: 2rem;">请联系管理员开启权限</h3>
       </Row>
-      <Menu theme="dark" width="auto" v-if="sidebar.isOpen && menuMembers.length > 0"
+      <Menu theme="dark" width="auto" v-if="!sidebar.isClosed && menuMembers.length > 0"
             :active-name="router.activeMenu" @on-select="activeMenu">
         <template v-for="item in menuMembers">
           <Submenu style="width: auto;" v-if="!item.leaf" :name="item.id">
@@ -67,8 +68,8 @@
   import md5 from "blueimp-md5";
   import { ArrayList, HashMap, HashSet, IllegalStateException } from "jcdt";
 
-  import { EntityStatus } from "@/tiny/support/status";
-  import { menuClient } from "@/tiny/web/client";
+  import { EntityStatus, ResponseStatus } from "@/tiny/support/status";
+  import { menuClient, permissionClient, roleClient } from "@/tiny/web/client";
   import {
     CLOSE_MASK,
     FRAME_SCROLL,
@@ -77,7 +78,10 @@
     MENU_INITIALIZE,
     MENU_ITEMS,
     OPEN_MASK,
-    UPDATE_TAB
+    SECURITY_INITIALIZE,
+    UPDATE_TAB,
+    USER_PERMISSIONS,
+    USER_ROLES
   } from "@/tiny/support/commons";
 
   export default {
@@ -85,7 +89,7 @@
       return {
         sidebar: {
           width: /Mobile/.test( navigator.userAgent ) ? 128 : 200,
-          isOpen: true
+          isClosed: false
         },
 
         menuMembers: [],
@@ -108,14 +112,15 @@
       };
     },
     async mounted() {
-      await this.installMask();       // 安装全局遮罩层, 执行耗时任务时可用于禁用用户操作
-      await this.installMenu();       // 安装菜单
-      await this.installTabs();       // 安装选项卡, 必须在菜单初始化之后
-      await this.installScroller();   // 安装滚动方向提示
+      await this.installMask();         // 安装全局遮罩层, 执行耗时任务时可用于禁用用户操作
+      await this.installMenu();         // 安装菜单
+      await this.installSecurity();     // 查询个人权限
+      await this.installTabs();         // 安装选项卡, 必须在菜单初始化之后
+      await this.installScroller();     // 安装滚动方向提示
     },
     computed: {
       rotateIcon() {
-        return [ "menu-icon", this.sidebar.isOpen ? "" : "rotate-icon" ];
+        return [ "menu-icon", this.sidebar.isClosed ? "rotate-icon" : "" ];
       }
     },
     methods: {
@@ -203,6 +208,27 @@
           mask.open = true;
         } );
       },
+      async installSecurity() {
+        let responses = await Promise.all( [ permissionClient.queryOwnPermissions(), roleClient.queryOwnRoles() ] );
+        if ( responses.filter( it => it.data.code === ResponseStatus.SUCCESS.code ).length === 2 ) {
+          let permissions = new HashSet();
+          responses[ 0 ].data.result.forEach( it => permissions.add( it.name ) );
+
+          let roles = new HashMap();
+          responses[ 1 ].data.result.forEach( it => roles.put( it.name, it ) );
+
+          GLOBAL_CACHE.put( USER_PERMISSIONS, permissions );
+          GLOBAL_CACHE.put( USER_ROLES, roles );
+
+        } else {
+          GLOBAL_CACHE.put( USER_PERMISSIONS, new HashSet() );
+          GLOBAL_CACHE.put( USER_ROLES, new HashMap() );
+        }
+
+        if ( !GLOBAL_EVENT_EMITTER.emit( SECURITY_INITIALIZE ) ) {
+          GLOBAL_EVENT_EMITTER.delayEmit( SECURITY_INITIALIZE );
+        }
+      },
       installTabs() {
         let tabInitializing = ( path, menuItem ) => {
           let router = this.router;
@@ -239,12 +265,11 @@
             menuItem = router.menus.get( routerPath );
 
           if ( !menuItem ) {
-            throw new IllegalStateException( `No Match menu for path ${routerPath}` )
+            throw new IllegalStateException( `No Match menu for path ${routerPath}` );
           }
 
-          if ( "" === oldPath ) {
-            tabInitializing( newPath, menuItem );
-            return;
+          if ( !oldPath ) {
+            return tabInitializing( newPath, menuItem );
           }
 
           let oldTabId = md5( `${menuItem.id}_${oldPath}` ),
@@ -272,10 +297,8 @@
         } );
       },
       toggleSider() {
-        this.$refs[ "sidebar" ].toggleCollapse();
-
         let sidebar = this.sidebar;
-        sidebar.isOpen ? sidebar.isOpen = false : setTimeout( () => sidebar.isOpen = true, 250 );
+        sidebar.isClosed = !sidebar.isClosed;
       },
       activeMenu( menuId ) {
         let router = this.router,
@@ -306,6 +329,7 @@
       },
       removeTab( tabId ) {
         let router = this.router;
+
         router.tabs.some( ( tab, index, tabs ) => {
           if ( tab.id !== tabId ) {
             return false;
@@ -319,9 +343,11 @@
             router.activeMenu = router.activeTab = "";
             this.$router.replace( "/console" );
 
-          } else if ( router.activeTab === tab.id ) {
-            let newIndex = index - 1;
-            this.$router.replace( router.menuTabMapping.get( tabs[ newIndex < 0 ? 0 : newIndex ].menuId ) );
+          } else {
+            // 看过 iview 的 tab 组件源码, activeTab 由于数据绑定的缘故, 会被 tabs 组件修改其中的值
+            // 并且是从右到左开始寻找新的 tab, 如果没有 tab 则设置为 -1, 然后才派发事件
+            // 顺水推舟, 直接用 router.activeTab 的新值
+            this.$router.replace( router.menuTabMapping.get( router.tabs.find( it => it.id === router.activeTab ).menuId ) );
           }
 
           return true;

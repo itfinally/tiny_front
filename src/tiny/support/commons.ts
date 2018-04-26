@@ -18,8 +18,9 @@ export let TOKEN = "token";
 export let IS_RE_LOGIN = "is-reLogin";
 
 // event name
-export let MENU_INITIALIZE = "menu-initialize";       // -> args: (menus: Map<MenuId, Menu>)
-export let FRAME_SCROLL = "frame-scroll";             // -> args: (direct: String [ 'down' or 'up' ])
-export let OPEN_MASK = "open-mask";                   // -> args: (message: String)
-export let CLOSE_MASK = "close-mask";                 // -> no args
-export let UPDATE_TAB = "update-tab";                 // -> args: (vue instance)
+export let MENU_INITIALIZE = "menu-initialize";         // -> args: (menus: Map<MenuId, Menu>)
+export let FRAME_SCROLL = "frame-scroll";               // -> args: (direct: String [ 'down' or 'up' ])
+export let OPEN_MASK = "open-mask";                     // -> args: (message: String)
+export let CLOSE_MASK = "close-mask";                   // -> no args
+export let UPDATE_TAB = "update-tab";                   // -> args: (vue instance)
+export let SECURITY_INITIALIZE = "security-initialize"; // -> no args

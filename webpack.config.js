@@ -13,7 +13,7 @@ module.exports = {
     filename: "[name].js"
   },
   devServer: {
-    public: "192.168.199.159",
+    public: "127.0.0.1",
     disableHostCheck: true,
     host: "0.0.0.0",
     compress: true,

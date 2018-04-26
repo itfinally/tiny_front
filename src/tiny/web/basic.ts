@@ -82,12 +82,15 @@ export let retrofit = Retrofit.getBuilder()
   .addInterceptor( new AuthenticationInterceptor() )
   .build();
 
-export async function authentication( account: String, password: String, verifyCode: String,
+export async function authentication( account: String, password: String, verifyCode: string,
                                       successCallback: ( response: AxiosResponse<any> ) => null,
                                       failedCallback: ( response: AxiosResponse<any> ) => null ) {
 
+  let form = new FormData();
+  form.append( "verifyCode", verifyCode );
+
   let basic = CoreUtils.base64Encoder( `${account}:${password}` ),
-    response: AxiosResponse<any> = await retrofit.getEngine().post( `${address}/verifies/login`, { verifyCode }, {
+    response: AxiosResponse<any> = await retrofit.getEngine().post( `${address}/verifies/login`, form, {
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
         "Authorization": `Basic ${basic}`

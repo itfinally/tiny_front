@@ -4,10 +4,10 @@
       <Row style="margin: 0 .3rem; padding: .5rem 0; border-bottom: 1px solid #dddee1;">
         <Button type="primary" @click="saveMenuTreeWrapper">保存菜单目录</Button>
       </Row>
-      <MenuTree ref="menuTree" :data="menus" :is-modified="isModified" style="margin-left: .3rem"
-                @on-append-menu="openAppendMenuModal" @on-select-menu="selectMenu"/>
+      <MenuTree ref="menuTree" :data="menus" :is-modified="isModified" style="margin-left: .3rem;"
+                @on-append-menu="openAppendMenuModal" @on-select-menu="selectMenu" :disabled="!security.isAdmin"/>
     </Col>
-    <Col offset="1" span="13" style="border: 1px solid #dddee1">
+    <Col offset="1" span="13" style="border: 1px solid #dddee1;">
       <Row type="flex" align="middle" justify="center" v-if="null === selected.data"
            style="width: 100%; height: 100%;">
         <span>暂无数据, 请选择其中一个菜单项</span>
@@ -87,10 +87,17 @@
 
           all: [],
           used: []
+        },
+
+        security: {
+          isAdmin: false
         }
       }
     },
     async mounted() {
+      let security = this.security;
+      security.isAdmin = await this.hasRole( "admin" );
+
       let response = await menuClient.getMenus();
       this.menus = this.buildMenu( response.data.result );
 
@@ -132,7 +139,11 @@
 
         return this.buildMenu( members, relations );
       },
-      openAppendMenuModal( data, node, root, isRoot ) {
+      async openAppendMenuModal( data, node, root, isRoot ) {
+        if ( !( await this.hasRole( "admin", true ) ) ) {
+          return;
+        }
+
         let modal = this.creatorModal;
 
         modal.parentName = data.name;
@@ -140,7 +151,11 @@
         modal.root = isRoot;
         modal.open = true;
       },
-      appendMenu() {
+      async appendMenu() {
+        if ( !( await this.hasRole( "admin", true ) ) ) {
+          return;
+        }
+
         let modal = this.creatorModal,
           isEmpty = /^$|^\s+$/;
 
@@ -249,6 +264,10 @@
         this.$Message.error( { content: "请求失败" } );
       },
       async saveMenuTreeWrapper() {
+        if ( !( await this.hasRole( "admin", true ) ) ) {
+          return;
+        }
+
         GLOBAL_EVENT_EMITTER.emit( OPEN_MASK );
 
         try {
@@ -296,7 +315,7 @@
           }
         }
 
-        menuTree.getNewBorn().map( it => menuDeque.offerFirst( it ) );
+        menuTree.getNewBorn().forEach( it => menuDeque.offerFirst( it ) );
 
         let current, response,
 
@@ -360,7 +379,7 @@
         try {
           await this.saveMenuItem();
 
-        } catch ( exp ) {
+        } catch ( ignore ) {
           this.$Message.error( { content: "操作失败" } );
         }
 
@@ -378,15 +397,25 @@
           return;
         }
 
-        let requests = [ menuClient.updateMenu( selected.data.id, selected.name, selected.path ) ],
+        let requests = [],
+          canGrant = await this.hasPermission( "grant" ),
           added = transfer.getAdded(), removed = transfer.getRemoved();
 
-        if ( added.length > 0 ) {
+        if ( await this.hasRole( "admin" ) ) {
+          requests.push( menuClient.updateMenu( selected.data.id, selected.name, selected.path ) );
+        }
+
+        if ( canGrant && added.length > 0 ) {
           requests.push( menuClient.addRolesToMenu( selected.data.id, added ) );
         }
 
-        if ( removed.length > 0 ) {
+        if ( canGrant && removed.length > 0 ) {
           requests.push( menuClient.removeRolesFromMenu( selected.data.id, removed ) );
+        }
+
+        if ( requests.length <= 0 ) {
+          this.$Message.warning( { content: "操作失败, 缺少权限" } );
+          return;
         }
 
         let responses = await Promise.all( requests );

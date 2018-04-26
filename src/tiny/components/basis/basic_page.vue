@@ -1,5 +1,12 @@
 <script>
-  import { GLOBAL_EVENT_EMITTER, UPDATE_TAB } from "@/tiny/support/commons";
+  import {
+    GLOBAL_CACHE,
+    GLOBAL_EVENT_EMITTER,
+    SECURITY_INITIALIZE,
+    UPDATE_TAB,
+    USER_PERMISSIONS,
+    USER_ROLES
+  } from "@/tiny/support/commons";
 
   export default {
     name: "BasicPage",
@@ -36,7 +43,7 @@
       getRouterPath() {
         let metadata = this.metadata;
 
-        if ( "" === metadata.routerPath ) {
+        if ( !metadata.routerPath ) {
           let currentPath = this.$route.path,
             matched = this.$route.matched;
 
@@ -69,6 +76,35 @@
 
         this.$router.replace( path );
         this.metadata.path = path;
+      },
+      async hasPermission( name, showTip = false ) {
+        // ADMIN 必定放行
+        if ( await this.hasRole( "admin" ) ) {
+          return true;
+        }
+
+        if ( !GLOBAL_CACHE.containsKey( USER_PERMISSIONS ) ) {
+          await new Promise( resolve => GLOBAL_EVENT_EMITTER.once( SECURITY_INITIALIZE, () => resolve() ) );
+        }
+
+        let isPass = GLOBAL_CACHE.get( USER_PERMISSIONS ).contains( name );
+        if ( !isPass && showTip ) {
+          this.$Message.error( { content: "权限不足, 拒绝访问" } );
+        }
+
+        return isPass;
+      },
+      async hasRole( name, showTip = false ) {
+        if ( !GLOBAL_CACHE.containsKey( USER_ROLES ) ) {
+          await new Promise( resolve => GLOBAL_EVENT_EMITTER.once( SECURITY_INITIALIZE, () => resolve() ) );
+        }
+
+        let isPass = GLOBAL_CACHE.get( USER_ROLES ).containsKey( name.toUpperCase() );
+        if ( !isPass && showTip ) {
+          this.$Message.error( { content: "权限不足, 拒绝访问" } );
+        }
+
+        return isPass;
       }
     }
   }

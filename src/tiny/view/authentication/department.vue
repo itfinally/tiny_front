@@ -4,9 +4,9 @@
       <Panel name="condition" style="font-size: .8rem;">
         工具栏
         <QueryForm ref="queryForm" slot="content" @on-query="queryFromForm">
-          <Button type="primary" slot="btn" @click="addPermission">新增部门</Button>
-          <Button type="primary" slot="btn" @click="removeAll">删除选定数据</Button>
-          <Button type="primary" slot="btn" @click="recoverAll">恢复选定数据</Button>
+          <Button v-if="security.departmentWrite" type="primary" slot="btn" @click="addPermission">新增部门</Button>
+          <Button v-if="security.departmentWrite" type="primary" slot="btn" @click="removeAll">删除选定数据</Button>
+          <Button v-if="security.departmentWrite" type="primary" slot="btn" @click="recoverAll">恢复选定数据</Button>
         </QueryForm>
       </Panel>
     </Collapse>
@@ -85,8 +85,11 @@
                   btnName = ""
               }
 
-              let btns = [
-                h( "Button", {
+              let btns = [],
+                security = this.security;
+
+              if ( security.departmentWrite ) {
+                btns.push( h( "Button", {
                   props: {
                     type: "text",
                     size: "small"
@@ -106,10 +109,10 @@
                       modal.open = true;
                     }
                   }
-                }, "编辑" )
-              ];
+                }, "编辑" ) );
+              }
 
-              if ( btnName ) {
+              if ( security.departmentWrite && btnName ) {
                 btns.push( h( "Button", {
                   props: {
                     type: "text",
@@ -121,51 +124,53 @@
                 }, btnName ) );
               }
 
-              btns.push( h( "Button", {
-                props: {
-                  type: "text",
-                  size: "small"
-                },
-                on: {
-                  click: async () => {
-                    GLOBAL_EVENT_EMITTER.emit( OPEN_MASK );
+              if ( this.hasPermission( "grant" ) ) {
+                btns.push( h( "Button", {
+                  props: {
+                    type: "text",
+                    size: "small"
+                  },
+                  on: {
+                    click: async () => {
+                      GLOBAL_EVENT_EMITTER.emit( OPEN_MASK );
 
-                    try {
-                      let expect = status => ResponseStatus.expect( status, ResponseStatus.SUCCESS.code, ResponseStatus.EMPTY_RESULT.code ),
-                        responses = await Promise.all( [ departmentClient.queryRolesByDepartmentIdIs( row.id ), roleClient.queryAvailableAssignRoles() ] );
+                      try {
+                        let expect = status => ResponseStatus.expect( status, ResponseStatus.SUCCESS.code, ResponseStatus.EMPTY_RESULT.code ),
+                          responses = await Promise.all( [ departmentClient.queryRolesByDepartmentIdIs( row.id ), roleClient.queryAvailableAssignRoles() ] );
 
-                      if ( responses.filter( it => expect( it.data.code ) ).length === 2 ) {
-                        let modal = this.roleModal;
+                        if ( responses.filter( it => expect( it.data.code ) ).length === 2 ) {
+                          let modal = this.roleModal;
 
-                        modal.used = responses[ 0 ].data.result.map( it => it.id );
-                        modal.all = responses[ 1 ].data.result.map( it => {
-                          return {
-                            key: it.id,
-                            label: it.name,
-                            description: it.description
-                          };
-                        } );
+                          modal.used = responses[ 0 ].data.result.map( it => it.id );
+                          modal.all = responses[ 1 ].data.result.map( it => {
+                            return {
+                              key: it.id,
+                              label: it.name,
+                              description: it.description
+                            };
+                          } );
 
-                        modal.title = `为 ${row.name} 分配角色`;
-                        modal.departmentId = row.id;
-                        modal.open = true;
+                          modal.title = `为 ${row.name} 分配角色`;
+                          modal.departmentId = row.id;
+                          modal.open = true;
 
-                      } else {
-                        responses.forEach( it => !expect( it.data.code )
-                          ? this.$Message.error( { content: `请求失败, ${it.data.message}` } ) : null );
+                        } else {
+                          responses.forEach( it => !expect( it.data.code )
+                            ? this.$Message.error( { content: `请求失败, ${it.data.message}` } ) : null );
+                        }
+
+                        GLOBAL_EVENT_EMITTER.emit( CLOSE_MASK );
+                        return;
+
+                      } catch ( ignore ) {
                       }
 
                       GLOBAL_EVENT_EMITTER.emit( CLOSE_MASK );
-                      return;
-
-                    } catch ( exp ) {
+                      this.$Message.error( { content: "请求失败" } );
                     }
-
-                    GLOBAL_EVENT_EMITTER.emit( CLOSE_MASK );
-                    this.$Message.error( { content: "请求失败" } );
                   }
-                }
-              }, "角色分配" ) );
+                }, "角色分配" ) );
+              }
 
               return h( "Row", btns );
             }
@@ -192,10 +197,19 @@
 
           title: "",
           departmentId: ""
+        },
+
+        security: {
+          departmentRead: false,
+          departmentWrite: false
         }
       };
     },
     async mounted() {
+      let security = this.security;
+      security.departmentRead = await this.hasPermission( "department_read" );
+      security.departmentWrite = await this.hasPermission( "department_write" );
+
       let paging = this.$refs[ "paging" ],
         queryForm = this.$refs[ "queryForm" ],
         params = this.$router.history.current.params;
@@ -216,6 +230,10 @@
         this.query( this.$refs[ "queryForm" ].getConditions(), pageData );
       },
       async query( conditions, pageData ) {
+        if ( !( await this.hasPermission( "department_read", true ) ) ) {
+          return;
+        }
+
         this.tables.total = ( await departmentClient.countByConditionsIs( conditions ) ).data.result;
         this.tables.data = ( await departmentClient.queryByConditionsIs(
           Object.assign( Object.create( null ), conditions, pageData ) ) ).data.result.map( item => {
@@ -234,9 +252,13 @@
         this.updatePath( conditions, pageData );
       },
       async updateRowStatus( row ) {
+        if ( !( await this.hasPermission( "department_write", true ) ) ) {
+          return;
+        }
+
         switch ( row._status ) {
           case EntityStatus.NORMAL.status:
-            this.removeOrRecoverRow( row, () => departmentClient.removeByIdIs( row.id ) );
+            this.removeOrRecoverRow( row, () => departmentClient.removeDepartment( row.id ) );
             break;
 
           case EntityStatus.DELETE.status:
@@ -248,7 +270,11 @@
             this.$Message.error( { content: "更新失败, 当前数据状态异常" } );
         }
       },
-      addPermission() {
+      async addPermission() {
+        if ( !( await this.hasPermission( "department_write", true ) ) ) {
+          return;
+        }
+
         let modal = this.modal;
 
         modal.name = "";
@@ -260,14 +286,26 @@
         modal.open = true;
       },
       async removeAll() {
+        if ( !( await this.hasPermission( "department_write", true ) ) ) {
+          return;
+        }
+
         let rows = this.$refs[ "dataTable" ].getAllSelected();
         this.removeAllRow( rows, () => departmentClient.removeAllByIdIn( rows.map( item => item.id ) ) );
       },
       async recoverAll() {
+        if ( !( await this.hasPermission( "department_write", true ) ) ) {
+          return;
+        }
+
         let rows = this.$refs[ "dataTable" ].getAllSelected();
         this.recoverAllRow( rows, () => departmentClient.recoverAllByIdIn( rows.map( item => item.id ) ) );
       },
       async updateData() {
+        if ( !( await this.hasPermission( "department_write", true ) ) ) {
+          return;
+        }
+
         GLOBAL_EVENT_EMITTER.emit( OPEN_MASK );
 
         let modal = this.modal;
@@ -311,6 +349,10 @@
         this.$Message.error( { content: "更新失败" } );
       },
       async saveData() {
+        if ( !( await this.hasPermission( "department_write", true ) ) ) {
+          return;
+        }
+
         GLOBAL_EVENT_EMITTER.emit( OPEN_MASK );
 
         let modal = this.modal;
@@ -351,6 +393,10 @@
         this.$Message.error( { content: "更新失败" } );
       },
       async updateDepartmentRole( added, removed ) {
+        if ( !( await this.hasPermission( "grant", true ) ) ) {
+          return;
+        }
+
         GLOBAL_EVENT_EMITTER.emit( OPEN_MASK );
 
         let requests = [], modal = this.roleModal;
