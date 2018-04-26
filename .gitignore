@@ -9,4 +9,3 @@ dist
 *.js.map
 src/**/*.js
 !src/index.js
-package-lock.json
