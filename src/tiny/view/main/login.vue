@@ -18,7 +18,7 @@
             <Input v-model="passport.account" type="text" placeholder="请输入账户名..."/>
           </FormItem>
           <FormItem label="密码" prop="password">
-            <Input v-model="passport.password" type="password" placeholder="请输入密码..."/>
+            <Input v-model="passport.password" type="password" placeholder="请输入密码..." @on-enter="login"/>
           </FormItem>
           <FormItem label="验证码" prop="verifyCode" v-if="passport.requireVerify">
             <Input v-model="passport.verifyCode" type="text" placeholder="请输入验证码..." style="width: 58%; display: inline-block; vertical-align: top;"/>
