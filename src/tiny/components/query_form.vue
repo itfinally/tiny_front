@@ -16,14 +16,14 @@
       </FormItem>
       <slot name="afterId"/>
       <FormItem label="状态" prop="status" :label-width="40" v-if="queryByStatus">
-        <Select v-model="conditions.status" :value="0" style="width: 4.5rem;">
+        <Select v-model="conditions.status" :value="0" style="width: 6rem;">
           <Option v-for="item in entityStatus" :value="item.status" :key="item.name">
             {{ item.name }}
           </Option>
         </Select>
       </FormItem>
       <slot name="afterStatus"/>
-      <FormItem label="按创建时间查询" :label-width="100" v-if="queryByCreateTime">
+      <FormItem label="按创建时间查询" :label-width="110" v-if="queryByCreateTime">
         <Row>
           <Col span="11">
           <FormItem prop="createTimeStarted">
@@ -42,7 +42,7 @@
         </Row>
       </FormItem>
       <slot name="afterCreateTime"/>
-      <FormItem label="按更新时间查询" :label-width="100" v-if="queryByUpdateTime">
+      <FormItem label="按更新时间查询" :label-width="110" v-if="queryByUpdateTime">
         <Row>
           <Col span="11">
           <FormItem prop="updateTimeStarted">

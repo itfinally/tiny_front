@@ -6,7 +6,9 @@ let login = ( resolve: Function ) => require.ensure( [], require => resolve( req
   permission = ( resolve: Function ) => require.ensure( [], require => resolve( require( "@/tiny/view/authentication/permission.vue" ) ), errCallback, "authentication" ),
   role = ( resolve: Function ) => require.ensure( [], require => resolve( require( "@/tiny/view/authentication/role.vue" ) ), errCallback, "authentication" ),
   department = ( resolve: Function ) => require.ensure( [], require => resolve( require( "@/tiny/view/authentication/department.vue" ) ), errCallback, "authentication" ),
-  menu = ( resolve: Function ) => require.ensure( [], require => resolve( require( "@/tiny/view/authentication/menu.vue" ) ), errCallback, "authentication" );
+  menu = ( resolve: Function ) => require.ensure( [], require => resolve( require( "@/tiny/view/authentication/menu.vue" ) ), errCallback, "authentication" ),
+
+  accessLog = ( resolve: Function ) => require.ensure( [], require => resolve( require( "@/tiny/view/authentication/access_log.vue" ) ), errCallback, "system" );
 
 function prefixWith( prefix: string, routers: any[] ) {
   routers.forEach( router => router.path = `${prefix}/${router.path}`.replace( /\/{2,}/g, "/" ) );
@@ -35,5 +37,8 @@ export default [ {
   }, {
     "path": "menu",
     "component": menu
+  }, {
+    "path": "access_log/:metadata?",
+    "component": accessLog
   } ] )
 } ];

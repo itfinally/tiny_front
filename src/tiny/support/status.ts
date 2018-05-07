@@ -1,4 +1,4 @@
-import { CoreUtils, HashMap, Map, IllegalArgumentException } from "jcdt";
+import { Lang, HashMap, Map, IllegalArgumentException } from "jcdt";
 
 export class BasicEnum<SubEnum> {
   private static enums: Map<Function, any[]> = new HashMap();
@@ -49,7 +49,7 @@ export class ResponseStatus extends BasicEnum<ResponseStatus> {
   }
 
   public static getMessageByStatusCode( code: number, defaultMessage: string = "unknown statusCode" ): string {
-    if ( !CoreUtils.isNumber( code ) ) {
+    if ( !Lang.isNumber( code ) ) {
       throw new IllegalArgumentException( `Expect number, but got ${typeof code}` );
     }
 
@@ -81,7 +81,7 @@ export class EntityStatus extends BasicEnum<EntityStatus> {
   }
 
   public static getNameByStatus( status: number, defaultName: string = "unknown name" ): string {
-    if ( !CoreUtils.isNumber( status ) ) {
+    if ( !Lang.isNumber( status ) ) {
       throw new IllegalArgumentException( `Expect number, but got ${typeof status}` );
     }
 

@@ -1,10 +1,17 @@
 import { Body, DELETE, Field, FormUrlEncoded, GET, HTTP, Path, POST } from "retrofitjs";
 import { BasicResponse, ListResponse, retrofit, SingleResponse } from "@/tiny/web/basic";
-import { MenuItemEntity, PermissionEntity, RoleEntity } from "@/tiny/web/entity";
+import {
+  AccessLogEntity,
+  BasicEntity,
+  DepartmentEntity,
+  MenuItemEntity,
+  PermissionEntity,
+  RoleEntity
+} from "@/tiny/web/entity";
 
-class BasicClient {
+class BasicClient<Entity extends BasicEntity> {
   @POST( "/query_by_conditions_is" )
-  public queryByConditionsIs( @Body conditions: any ): ListResponse<PermissionEntity> {
+  public queryByConditionsIs( @Body conditions: any ): ListResponse<Entity> {
   }
 
   @POST( "/count_by_conditions_is" )
@@ -67,7 +74,7 @@ class MenuClient {
 }
 
 @HTTP( "/permission" )
-class PermissionClient extends BasicClient {
+class PermissionClient extends BasicClient<PermissionEntity> {
   @FormUrlEncoded
   @POST( "/update/:id" )
   public update( @Path( "id" ) id: String, @Field( "status" ) status: Number,
@@ -89,7 +96,7 @@ class PermissionClient extends BasicClient {
 }
 
 @HTTP( "/role" )
-class RoleClient extends BasicClient {
+class RoleClient extends BasicClient<RoleEntity> {
   @FormUrlEncoded
   @POST( "/update/:id" )
   public update( @Path( "id" ) id: String, @Field( "status" ) status: Number, @Field( "name" ) name: String,
@@ -132,7 +139,7 @@ class RoleClient extends BasicClient {
 }
 
 @HTTP( "/department" )
-class DepartmentClient extends BasicClient {
+class DepartmentClient extends BasicClient<DepartmentEntity> {
   @FormUrlEncoded
   @POST( "/update/:id" )
   public update( @Path( "id" ) id: String, @Field( "status" ) status: Number,
@@ -161,7 +168,19 @@ class DepartmentClient extends BasicClient {
   }
 }
 
+@HTTP( "/access_log" )
+class AccessLogClient {
+  @POST( "/query_by_conditions_is" )
+  public queryByConditionsIs( @Body conditions: any ): ListResponse<AccessLogEntity> {
+  }
+
+  @POST( "/count_by_conditions_is" )
+  public countByConditionsIs( @Body conditions: any ): SingleResponse<Number> {
+  }
+}
+
 export let menuClient: MenuClient = retrofit.create( MenuClient );
 export let roleClient: RoleClient = retrofit.create( RoleClient );
+export let accessLogClient: AccessLogClient = retrofit.create( AccessLogClient );
 export let departmentClient: DepartmentClient = retrofit.create( DepartmentClient );
 export let permissionClient: PermissionClient = retrofit.create( PermissionClient );

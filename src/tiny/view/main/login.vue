@@ -40,7 +40,6 @@
   import "particles.js";
   import ParticleConfig from "@/tiny/configuration/particles.json";
 
-  import { CoreUtils } from "jcdt";
   import { address } from "@/tiny/support/commons";
   import { authentication } from "@/tiny/web/basic";
 
@@ -94,7 +93,7 @@
                 return;
               }
 
-              passport.verifyImage = `${address}/verifies/get_valid_image/${passport.account}/${CoreUtils.uuid()}`;
+              this.nextValidCode();
               passport.rules.verifyCode[ 0 ].required = true;
             }
           };
@@ -113,7 +112,7 @@
       },
       nextValidCode() {
         let passport = this.passport;
-        passport.verifyImage = `${address}/verifies/get_valid_image/${passport.account}/${CoreUtils.uuid()}`;
+        passport.verifyImage = `${address}/verifies/get_valid_image/${passport.account}/${Date.now()}`;
       }
     }
   }

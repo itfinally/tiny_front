@@ -16,7 +16,7 @@
         <div style="width: 100%; margin: 0 .3rem .5rem; padding: .5rem 0; border-bottom: 1px solid #dddee1;">
           <Button type="primary" @click="saveMenuItemWrapper">保存菜单信息</Button>
         </div>
-        <Form :model="selected" :label-width="60" style="width: 100%;">
+        <Form :model="selected" :label-width="70" style="width: 100%;">
           <FormItem label="菜单名">
             <Input type="text" v-model="selected.name" placeholder="菜单名不能为空"/>
           </FormItem>
@@ -52,7 +52,7 @@
   import MenuTree from "@/tiny/components/menu_tree";
   import DataTransfer from "@/tiny/components/data_transfer";
 
-  import { ArrayDeque, CoreUtils, HashMap } from "jcdt";
+  import { ArrayDeque, Lang, HashMap } from "jcdt";
   import { CLOSE_MASK, GLOBAL_EVENT_EMITTER, OPEN_MASK } from "@/tiny/support/commons";
   import { EntityStatus, ResponseStatus } from "@/tiny/support/status";
   import { menuClient, roleClient } from "@/tiny/web/client";
@@ -338,7 +338,7 @@
           if ( current.root ) {
             response = await menuClient.addRootMenu( current.name, current.path, current.leaf );
 
-          } else if ( !CoreUtils.isNone( current.parentId ) ) {
+          } else if ( !Lang.isNone( current.parentId ) ) {
             response = await menuClient.addMenu( current.name, current.path, current.parentId, current.leaf );
 
           } else if ( nameMapping.containsKey( current.parentName ) ) {

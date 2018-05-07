@@ -1,28 +1,43 @@
-interface BasicEntity {
-  id: String;
+export interface BasicEntity {
+  id: string;
   status: Number;
-  createTime: String;
-  updateTime: String;
-  deleteTime: String;
+  createTime: string;
+  updateTime: string;
+  deleteTime: string;
 }
 
 export interface MenuItemEntity extends BasicEntity {
-  name: String;
-  path: String;
+  name: string;
+  path: string;
 
-  root: String;
-  leaf: String;
+  root: string;
+  leaf: string;
 
   childes: MenuItemEntity[]
 }
 
 export interface PermissionEntity extends BasicEntity {
-  name: String;
-  description: String;
+  name: string;
+  description: string;
 }
 
 export interface RoleEntity extends BasicEntity {
-  name: String;
+  name: string;
   priority: Number;
-  description: String;
+  description: string;
+}
+
+export interface DepartmentEntity extends BasicEntity {
+  name: string;
+  description: string;
+}
+
+export interface AccessLogEntity extends BasicEntity {
+  requestMethod: string;
+  requestPath: string;
+  sourceIp: string;
+  username: string;
+
+  exception: boolean;
+  result: string;
 }

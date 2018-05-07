@@ -1,6 +1,6 @@
 import { Chain, Interceptor, ResponseInterface, Retrofit, RetrofitConfig, RetrofitResponse } from "retrofitjs";
 import { address, GLOBAL_CACHE, IS_RE_LOGIN, ROUTER_KEY, TOKEN, VUE_KEY } from "@/tiny/support/commons";
-import { CoreUtils, Exception } from "jcdt";
+import { Exception, Lang } from "jcdt";
 import { ResponseStatus } from "@/tiny/support/status";
 import { AxiosResponse } from "axios";
 import { UnAuthenticationException } from "@/tiny/support/exception";
@@ -31,7 +31,7 @@ class AuthenticationInterceptor implements Interceptor {
   async intercept( chain: Chain ): Promise<ResponseInterface<any>> {
     let request = chain.request();
 
-    if ( CoreUtils.isNone( request.headers ) ) {
+    if ( Lang.isNone( request.headers ) ) {
       request.headers = {};
     }
 
@@ -89,7 +89,7 @@ export async function authentication( account: String, password: String, verifyC
   let form = new FormData();
   form.append( "verifyCode", verifyCode );
 
-  let basic = CoreUtils.base64Encoder( `${account}:${password}` ),
+  let basic = Lang.base64Encode( `${account}:${password}` ),
     response: AxiosResponse<any> = await retrofit.getEngine().post( `${address}/verifies/login`, form, {
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",

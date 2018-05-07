@@ -2,16 +2,18 @@
   "compilerOptions": {
     "strict": true,
     "allowJs": true,
+    "sourceMap": true,
     "baseUrl": "./src",
     "target": "es2016",
     "module": "commonjs",
     "sourceRoot": "./src",
     "removeComments": true,
-    "inlineSourceMap": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "paths": {
-      "@/*": ["./*"]
+      "@/*": [
+        "./*"
+      ]
     }
   },
   "exclude": [

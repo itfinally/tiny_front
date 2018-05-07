@@ -1,7 +1,7 @@
 <template>
   <Row>
     <Table v-if="this.data.length > 0" :loading="loading" :columns="finalColumns" :data="this.data"
-           @on-selection-change="selectChange" ref="table"></Table>
+           @on-selection-change="selectChange" ref="table" size="small"></Table>
     <Row v-if="this.data.length <= 0" type="flex" justify="center" align="middle"
          style="width: 100%; height: 10rem; border: 1px solid rgba(111,117,130,0.51);">
       <h3>暂无数据</h3>
@@ -17,6 +17,11 @@
     extends: BasicComponent,
     props: {
       addSelector: {
+        type: Boolean,
+        default: true,
+        required: false
+      },
+      selectorFixed: {
         type: Boolean,
         default: true,
         required: false
@@ -46,19 +51,24 @@
           rows: [],
           defaultMetadata: [ {
             title: "Id",
-            key: "id"
+            key: "id",
+            width: 280
           }, {
             title: "状态",
-            key: "status"
+            key: "status",
+            width: 65
           }, {
             title: "创建日期",
-            key: "createTime"
+            key: "createTime",
+            width: 160
           }, {
             title: "更新日期",
-            key: "updateTime"
+            key: "updateTime",
+            width: 160
           }, {
             title: "删除日期",
-            key: "deleteTime"
+            key: "deleteTime",
+            width: 160
           } ]
         }
       };
@@ -76,8 +86,13 @@
         if ( this.addSelector ) {
           columns.unshift( {
             type: "selection",
-            align: "center"
+            align: "center",
+            width: 60
           } );
+
+          if ( this.selectorFixed ) {
+            columns[ 0 ].fixed = "left";
+          }
         }
 
         return columns;

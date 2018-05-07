@@ -39,6 +39,8 @@
 </template>
 
 <script>
+  import { Lang } from "jcdt";
+
   import BasicTablePage from "@/tiny/components/basis/basic_table_page";
   import TransferModal from "@/tiny/components/transfer_modal";
   import QueryForm from "@/tiny/components/query_form";
@@ -61,14 +63,17 @@
 
           columns: [ {
             title: "名称",
-            key: "name"
+            key: "name",
+            width: 200
           }, {
             title: "描述",
-            key: "description"
+            key: "description",
+            width: 250
           }, {
             title: "操作",
             key: "operation",
             fixed: "right",
+            width: 200,
             render: ( h, parameters ) => {
               let btnName, row = this.tables.data[ parameters.index ];
 
@@ -176,7 +181,8 @@
             }
           } ],
           data: [],
-          total: 0
+          total: 0,
+          lastCondition: null
         },
         modal: {
           id: "",
@@ -210,33 +216,45 @@
       security.departmentRead = await this.hasPermission( "department_read" );
       security.departmentWrite = await this.hasPermission( "department_write" );
 
-      let paging = this.$refs[ "paging" ],
+      let params = this.$router.history.current.params,
         queryForm = this.$refs[ "queryForm" ],
-        params = this.$router.history.current.params;
+        paging = this.$refs[ "paging" ];
 
       if ( params.metadata ) {
-        let [ conditions, pageData ] = JSON.parse( decodeURIComponent( params.metadata ) );
-        paging.init( pageData );
+        let [ conditions, cursors ] = JSON.parse( decodeURIComponent( params.metadata ) );
+
+        paging.init( cursors );
         queryForm.init( conditions );
       }
 
-      this.query( queryForm.getConditions(), paging.getPageData() );
+      this.query( queryForm.getConditions(), paging.getCursors() );
     },
     methods: {
       queryFromForm( conditions ) {
-        this.query( conditions, this.$refs[ "paging" ].getPageData() );
+        this.query( conditions, this.$refs[ "paging" ].getCursors() );
       },
-      queryFromPaging( pageData ) {
-        this.query( this.$refs[ "queryForm" ].getConditions(), pageData );
+      queryFromPaging( cursors ) {
+        this.query( this.$refs[ "queryForm" ].getConditions(), cursors );
       },
-      async query( conditions, pageData ) {
+      async query( conditions, cursors ) {
         if ( !( await this.hasPermission( "department_read", true ) ) ) {
           return;
         }
 
-        this.tables.total = ( await departmentClient.countByConditionsIs( conditions ) ).data.result;
-        this.tables.data = ( await departmentClient.queryByConditionsIs(
-          Object.assign( Object.create( null ), conditions, pageData ) ) ).data.result.map( item => {
+        let tables = this.tables,
+          paging = this.$refs[ "paging" ];
+
+        if ( !Lang.eq( tables.lastCondition, conditions ) ) {
+
+          paging.reset();
+          cursors = paging.getCursors();
+          tables.lastCondition = conditions;
+
+          tables.total = ( await departmentClient.countByConditionsIs( conditions ) ).data.result;
+        }
+
+        tables.data = ( await departmentClient.queryByConditionsIs(
+          Object.assign( Object.create( null ), conditions, cursors ) ) ).data.result.map( item => {
           return {
             id: item.id,
             _status: item.status,
@@ -249,7 +267,7 @@
           };
         } );
 
-        this.updatePath( conditions, pageData );
+        this.updatePath( conditions, paging.getPagingDetails() );
       },
       async updateRowStatus( row ) {
         if ( !( await this.hasPermission( "department_write", true ) ) ) {
